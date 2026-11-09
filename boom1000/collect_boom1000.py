@@ -1,41 +1,83 @@
-name: Collecte Boom 1000
+import csv
+import json
+import os
+import sys
+import time
+from datetime import datetime, timezone
 
-on:
-  workflow_dispatch:
-    inputs:
-      tick_count:
-        description: Nombre de ticks à collecter
-        required: true
-        default: "100000"
+import websocket
 
-permissions:
-  contents: read
+APP_ID = "1089"
+URL = f"wss://ws.derivws.com/websockets/v3?app_id={APP_ID}"
+COUNT = int(os.getenv("TICK_COUNT", "100000"))
 
-jobs:
-  collect:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
 
-    steps:
-      - name: Télécharger le dépôt
-        uses: actions/checkout@v4
+def main():
+    print("Connexion à Deriv...")
+    ws = websocket.create_connection(URL, timeout=30)
 
-      - name: Installer Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+    try:
+        ws.send(json.dumps({
+            "active_symbols": "brief",
+            "product_type": "basic"
+        }))
 
-      - name: Installer les dépendances
-        run: pip install -r boom1000/requirements.txt
+        while True:
+            data = json.loads(ws.recv())
+            if "error" in data:
+                raise RuntimeError(data["error"]["message"])
+            if data.get("msg_type") == "active_symbols":
+                break
 
-      - name: Collecter les données
-        env:
-          TICK_COUNT: ${{ inputs.tick_count }}
-        run: python boom1000/collect_boom1000.py
+        symbols = data.get("active_symbols", [])
+        matches = [
+            s for s in symbols
+            if "boom 1000" in s.get("display_name", "").lower()
+        ]
 
-      - name: Sauvegarder le CSV
-        uses: actions/upload-artifact@v4
-        with:
-          name: boom1000-ticks
-          path: boom1000_ticks.csv
-          retention-days: 14
+        if not matches:
+            raise RuntimeError("Symbole Boom 1000 introuvable.")
+
+        symbol = matches[0]["symbol"]
+        print("Marché trouvé :", symbol)
+
+        ws.send(json.dumps({
+            "ticks_history": symbol,
+            "end": "latest",
+            "count": COUNT,
+            "style": "ticks"
+        }))
+
+        while True:
+            result = json.loads(ws.recv())
+            if "error" in result:
+                raise RuntimeError(result["error"]["message"])
+            if result.get("msg_type") == "history":
+                break
+
+        history = result["history"]
+
+        with open("boom1000_ticks.csv", "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["epoch", "datetime_utc", "price"])
+
+            for epoch, price in zip(
+                history["times"], history["prices"]
+            ):
+                date = datetime.fromtimestamp(
+                    int(epoch), timezone.utc
+                ).isoformat()
+                writer.writerow([epoch, date, price])
+
+        print("Ticks collectés :", len(history["prices"]))
+
+    finally:
+        ws.close()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print("ERREUR :", e)
+        sys.exit(1)
