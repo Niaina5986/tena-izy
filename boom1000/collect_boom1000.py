@@ -7,69 +7,132 @@ from datetime import datetime, timezone
 
 import websocket
 
-APP_ID = "1089"
+APP_ID = os.getenv("DERIV_APP_ID", "1089")
 URL = f"wss://ws.derivws.com/websockets/v3?app_id={APP_ID}"
+
 COUNT = int(os.getenv("TICK_COUNT", "100000"))
+TIMEOUT = 40
+MAX_RETRIES = 5
+
+
+def connect():
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            print(f"Connexion Deriv : tentative {attempt}/{MAX_RETRIES}")
+
+            ws = websocket.create_connection(
+                URL,
+                timeout=TIMEOUT,
+                enable_multithread=True
+            )
+
+            print("Connexion établie !")
+            return ws
+
+        except Exception as error:
+            print(f"Échec connexion : {error}")
+
+            if attempt == MAX_RETRIES:
+                raise RuntimeError(
+                    "Impossible de joindre Deriv après 5 tentatives."
+                )
+
+            delay = attempt * 10
+            print(f"Nouvel essai dans {delay} secondes...")
+            time.sleep(delay)
+
+
+def request(ws, payload, expected_type):
+    ws.send(json.dumps(payload))
+    deadline = time.time() + TIMEOUT
+
+    while time.time() < deadline:
+        message = json.loads(ws.recv())
+
+        if "error" in message:
+            error = message["error"]
+            raise RuntimeError(
+                f"{error.get('code')} : {error.get('message')}"
+            )
+
+        if message.get("msg_type") == expected_type:
+            return message
+
+    raise TimeoutError("Délai de réponse Deriv dépassé.")
 
 
 def main():
-    print("Connexion à Deriv...")
-    ws = websocket.create_connection(URL, timeout=30)
+    print("=== COLLECTEUR BOOM 1000 ===")
+    print("Mode : lecture seule")
+    print("Ticks demandés :", COUNT)
+
+    ws = connect()
 
     try:
-        ws.send(json.dumps({
-            "active_symbols": "brief",
-            "product_type": "basic"
-        }))
+        response = request(
+            ws,
+            {
+                "active_symbols": "brief",
+                "product_type": "basic"
+            },
+            "active_symbols"
+        )
 
-        while True:
-            data = json.loads(ws.recv())
-            if "error" in data:
-                raise RuntimeError(data["error"]["message"])
-            if data.get("msg_type") == "active_symbols":
-                break
+        symbols = response.get("active_symbols", [])
 
-        symbols = data.get("active_symbols", [])
         matches = [
             s for s in symbols
             if "boom 1000" in s.get("display_name", "").lower()
         ]
 
         if not matches:
-            raise RuntimeError("Symbole Boom 1000 introuvable.")
+            raise RuntimeError("Boom 1000 introuvable.")
 
         symbol = matches[0]["symbol"]
-        print("Marché trouvé :", symbol)
 
-        ws.send(json.dumps({
-            "ticks_history": symbol,
-            "end": "latest",
-            "count": COUNT,
-            "style": "ticks"
-        }))
+        print("Marché :", matches[0]["display_name"])
+        print("Symbole :", symbol)
 
-        while True:
-            result = json.loads(ws.recv())
-            if "error" in result:
-                raise RuntimeError(result["error"]["message"])
-            if result.get("msg_type") == "history":
-                break
+        response = request(
+            ws,
+            {
+                "ticks_history": symbol,
+                "end": "latest",
+                "count": COUNT,
+                "style": "ticks"
+            },
+            "history"
+        )
 
-        history = result["history"]
+        history = response.get("history", {})
+        prices = history.get("prices", [])
+        times = history.get("times", [])
 
-        with open("boom1000_ticks.csv", "w", newline="") as f:
-            writer = csv.writer(f)
+        if not prices or not times:
+            raise RuntimeError("Aucune donnée reçue.")
+
+        count = min(len(prices), len(times))
+
+        with open(
+            "boom1000_ticks.csv",
+            "w",
+            newline="",
+            encoding="utf-8"
+        ) as file:
+
+            writer = csv.writer(file)
             writer.writerow(["epoch", "datetime_utc", "price"])
 
-            for epoch, price in zip(
-                history["times"], history["prices"]
-            ):
+            for epoch, price in zip(times[:count], prices[:count]):
                 date = datetime.fromtimestamp(
-                    int(epoch), timezone.utc
+                    int(epoch),
+                    timezone.utc
                 ).isoformat()
+
                 writer.writerow([epoch, date, price])
 
-        print("Ticks collectés :", len(history["prices"]))
+        print("Collecte terminée :", count, "ticks")
+        print("Fichier : boom1000_ticks.csv")
 
     finally:
         ws.close()
@@ -78,6 +141,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except Exception as e:
-        print("ERREUR :", e)
+    except Exception as error:
+        print("ÉCHEC :", error, file=sys.stderr)
         sys.exit(1)
