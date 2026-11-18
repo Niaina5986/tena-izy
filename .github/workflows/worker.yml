@@ -1,0 +1,33 @@
+name: AUTO-WORKER AI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lancer AUTO-WORKER AI
+        run: python auto_worker.py
+
+      - name: Enregistrer db.json
+        run: |
+          git config user.name "AUTO-WORKER AI"
+          git config user.email "actions@github.com"
+          git add db.json
+          git commit -m "Update AUTO-WORKER database" || echo "Aucune modification"
+          git push
