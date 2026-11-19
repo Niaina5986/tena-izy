@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "updated_at": null,
+  "missions": [],
+  "history": [],
+  "system": {
+    "status": "STARTING",
+    "current_mission": null,
+    "last_scan": null,
+    "total_found": 0,
+    "total_completed": 0
+  }
+}
