@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updated_at": "2026-11-19T13:48:17.770360+00:00",
+  "updated_at": "2026-11-19T13:55:44.567541+00:00",
   "missions": [
     {
       "id": "6490230412",
@@ -710,14 +710,66 @@
       "source": "GitHub",
       "status": "NEW",
       "created_in_system": "2026-11-19T13:48:17.770339+00:00"
+    },
+    {
+      "id": "6491057880",
+      "title": "[kevinton] improvement: batch getPermalink calls for multi-message citations (turns run 8+ serial permalink lookups)",
+      "description": "**What prompted it**\nIn #kyto thread slack:C0BDH1FNCTX:1795093257.986659 (Nov 19, 13:00Z and 13:16Z), exd asked for a Q&A summary of Zach Latta's $10,000 AI time-tracking bounty in #zrl-land, and Devansh asked for design advice. Both answers cite many individual messages, so kyto had to build a permalink for each one. Turn 1 ran about 10 getPermalink calls, and turn 2 about 8.\n\n**Today**\nPer the threadLogs for both turns, getPermalink is called one per step, not in parallel. Each call takes about 2 to 4 seconds (slowest 3.2 to 3.8s in turn 1, about 1.8 to 2.1s in turn 2). Turn 1 spent roughly 13.6s in tools, and most of its ~65s of model time was spent waiting between steps. Turn 2 had 9.5s of tool time. The permalinks were built from message ts values that were already known, so they need no extra reads, only a link formatted from channel id and ts.\n\n**Proposal**\n1. Add a batch form to the Slack permalink tool (for example `getPermalinks({channelId, messageTs: [...]})`) that returns all links in one call. Or, at minimum, let the agent issue several getPermalink calls in one step so they run in parallel.\n2. Or build the link locally: `https://<workspace>.slack.com/archives/<channelId>/p<ts without dot>?thread_ts=<root ts>&cid=<channelId>`. The format is already returned by the tool, so a tool-free formatter gives the same result with no round trips. Check it once against a tool result before relying on it.\nOwner and gating: no change to permissions. Read-only lookups.\n\n**Why it is worth it**\nIn these two turns, about 18 permalink lookups took roughly 40 to 60s of sequential wall time. A single batch or local formatting would remove most of that. Citation-heavy summaries (bounty and channel recaps) are common in #kyto, so the saving recurs.\n\n---\n_Filed by kevinton, kyto's after-the-fact reviewer, from a conversation it reviewed. Conversation details are deliberately left out._",
+      "url": "https://github.com/Devansh-awat/kyto/issues/263",
+      "repository": "https://api.github.com/repos/Devansh-awat/kyto",
+      "created_at": "2026-11-19T13:49:56Z",
+      "updated_at": "2026-11-19T13:49:56Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-19T13:52:11.886077+00:00"
+    },
+    {
+      "id": "6491085300",
+      "title": "Craftsman's Writs: the 150 order quests (94004, 94212–94360) are missing, writs do nothing",
+      "description": "**Build:** server 0.1.37.2 (release v0.1.37.4), client 1.60.1.70938\n\nThe 150 \"Craftsman's Writ: <item>\" items (264011–264160) start their order quests (client ItemSparse.StartQuestID: 94004 and 94212–94360; all 150 ids are in QuestV2.db2), but **none of these quests is in `quest_template`**, so a writ does nothing when used. The Sealed writs and Open Letter loot (1247526, 1269671/1269673/1269675) already work.\n\n**Official behaviour** (Wowhead Forever quest pages + nether tooltip JSON, all 150 have `daily: 1`):\n- daily; objectives = the writ x1 + the crafted item (x1, only 94237 Crafted Solid Shot x200);\n- reward = Coin Pouch (284584 Journeyman / 284585 Expert / 284586 Artisan) + 75 / 125 / 200 reputation with Azeroth Commerce Authority (2586) / Durotar Supply and Logistics (2587);\n- turned in to a customer somewhere in the world (\"deliver them to the location marked on your map\"), not at the hub.\n\n**Customers:** Wowhead almost never shows the ender. A player guide (https://conquestcapped.com/guides/wow-forever/wow-forever-craftsmans-writs/) lists writ → zone → customer for 111 writs; every one of the 111 items matches a quest of the right tier. Plus 94004 Sos'mol 257281 and 94328 Calliard 257750 (npc links on Wowhead). Not known for the other ~37 (6 Expert, ~30 Artisan).\n\n**Things we hit while adding them on our server** (from reading the code; the server loads them without DB errors on a DB copy, in-game test pending):\n- `StartItem` must be the writ (+ `ProvidedItemCount 1`): the writ has MaxCount 0, so without it `Player::AddQuestAndCheckCompletion` destroys the writ on accept and the quest can never be completed. The sniffed \"Shipping Label\" quests 98247/98248 have `StartItem 0` with the label as objective, so they look affected the same way (not tested in game).\n- Do not use `QUEST_FLAGS_REMOVE_SURPLUS_ITEMS` (Shipping Label has it): on turn-in it would delete every copy of the writ / crafted item.\n- Customers missing in `creature_template`: **Ugbert** (Steel Weapon Chain, Dustwallow Marsh), **The Ravenous** (Craftsman's Monocle, Dusky Bracers, Dustwallow Marsh), **Durganon 262294** (Fire Protection Potion, Fire Goggles, Searing Gorge); **Bullets Bigblast** has template 47340 but no spawn (Mithril Frag Bomb, Orange Martial Shirt, Swamp of Sorrows).\n- Customers that cannot take a quest here: **Murache 257322** (faction 90) and **Furious Shadowforge Digger 257429** (faction 73) are hostile to players (FactionTemplate EnemyGroup 1); **\"Plucky\" Johnson 6626** (`classic_npc_plucky_johnson`) and **Jhordy Lapforge 14743** (`npc_engineering_tele_trinket`) have gossip scripts that show no quest menu.\n- Coin Pouch money is not in the DB (`item_template_addon`); the guide gives 22–45 silver (Journeyman), 50–90 silver (Expert), about 75 silver on average (Artisan).\n\n**What we run meanwhile** (in case it is useful): 102 quests (the ones with a known, usable customer) with Flags 4096, `StartItem` = writ, objectives writ + crafted item, `RewardItem1` = Coin Pouch, `RewardFactionID1/2` = 2586/2587 with `RewardFactionOverride` 7500/12500/20000, `creature_questender` / `gameobject_questender` (Battered Trunk 642320 for Silver Skeleton Key), a turn-in `quest_poi` at the customer (UiMap of the zone), `quest_classic_level` 60/10/0 like the crate quests, and the pouch money above. Happy to share the generated SQL or the quest → customer table.\n",
+      "url": "https://github.com/Karrz1/TrinityCore/issues/354",
+      "repository": "https://api.github.com/repos/Karrz1/TrinityCore",
+      "created_at": "2026-11-19T13:51:27Z",
+      "updated_at": "2026-11-19T13:51:38Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-19T13:52:11.886114+00:00"
+    },
+    {
+      "id": "6491057917",
+      "title": "Factory evals 3: do Managed Agents behave the same as Harbor's sandbox?",
+      "description": "Third module of the factory evals plan.\n\n## Goal\n\nFind out whether Harbor results predict the real factory worker. There are two questions:\n\n- **Harness gap:** Harbor's `claude-code` agent runs the Claude Code CLI. The factory worker runs the Managed Agents loop: `agent_toolset_20260401`, the `worker.md` prompt, two-minute bash calls, web tools and MCP on Anthropic's side, and none of Claude Code's `CLAUDE.md` or skill loading.\n- **Sandbox gap:** does the real worker behave the same in a Harbor container as in the box's `spawn.sh` sandbox?\n\n## Readings\n\n- [ ] [Choosing an agent environment](https://platform.claude.com/docs/en/managed-agents/choosing-an-environment) and [self-hosted sandboxes](https://platform.claude.com/docs/en/managed-agents/self-hosted-sandboxes)\n- [ ] Managed Agents [events reference](https://platform.claude.com/docs/en/managed-agents/reference): `span.model_request_end` carries token usage\n- [ ] Anthropic, [Infrastructure noise in agentic coding evals](https://www.anthropic.com/research/infrastructure-noise) (Feb 2026): resource limits alone moved scores by 6 points\n\n## Tasks\n\n- [ ] Ryan creates a dedicated eval `self_hosted` environment and its key in the Console. No box worker may poll it.\n- [ ] Spike, before building the full agent: a custom Harbor `BaseAgent` creates a session on the host, so the API key stays out of the sandbox, then runs `ant beta:worker run` in the task container with the eval environment key. The task image is `FROM` the factory-sandbox image.\n- [ ] Eval variant of the worker with `web_fetch`, `web_search` and the GitHub MCP disabled and the issue text in the kickoff message. These tools run on Anthropic's side, so Harbor's network allowlist cannot stop them from fetching the merged answer. Record this as a deviation from production.\n- [ ] Concurrency 1 until work items are matched to trials, since any worker on an environment can claim any of its sessions\n- [ ] Convert session events to an ATIF trajectory so Phoenix gets traces for this arm\n- [ ] A/A run of `claude-code` to measure the noise floor (billed, ask first)\n- [ ] A vs B run with k of at least 3 per task, recording reward, turns, tool-call mix, tokens and wall time (billed, ask first)\n- [ ] Compare arm B with real factory sessions in Phoenix's `default` project for the sandbox gap\n- [ ] List the confounders: effort, prompts, timeouts, resources\n\n## Done when\n\nA written verdict on each gap, with its confidence. Ten tasks catch large differences, not small ones.\n",
+      "url": "https://github.com/rhprasad0/nova-toll-budget-agent/issues/841",
+      "repository": "https://api.github.com/repos/rhprasad0/nova-toll-budget-agent",
+      "created_at": "2026-11-19T13:49:56Z",
+      "updated_at": "2026-11-19T13:49:56Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-19T13:52:11.886120+00:00"
+    },
+    {
+      "id": "6491057249",
+      "title": "Factory evals 2: Phoenix baseline experiment and failure taxonomy",
+      "description": "Second module of the factory evals plan.\n\n## Goal\n\nLearn Phoenix experiment tracking and error analysis on a real baseline of the factory's tasks.\n\n## Readings\n\n- [ ] Phoenix [Harbor integration](https://arize.com/docs/phoenix/integrations/evaluation-integrations/harbor): dataset versions, one experiment per agent configuration, `reward` vs `infra_ok`, resume\n- [ ] Phoenix [run experiments](https://arize.com/docs/phoenix/datasets-and-experiments/how-to-experiments/running-experiments): baselines and the Metrics tab\n- [ ] Arize, [Agent benchmarking with Harbor and Phoenix](https://arize.com/blog/ai-agent-benchmarking-harbor-arize-phoenix/) and [Testing tool descriptions with Harbor and Phoenix](https://arize.com/blog/how-to-test-agent-tool-descriptions-with-harbor-and-phoenix/)\n- [ ] Husain and Shankar, [AI evals FAQ](https://hamel.dev/blog/posts/evals-faq/): error analysis by open coding, then axial coding\n\n## Tasks\n\n- [ ] Billed run, after Ryan approves (about $15 to $25): `claude-code` with `-k 3` on the train split, recorded with `--plugin arize-phoenix` to dataset `tollchat-merged-prs`\n- [ ] Mark that experiment as the dataset's baseline\n- [ ] Check `infra_ok` and reward coverage before reading any aggregate\n- [ ] Read every failing trace and write open-coded notes\n- [ ] Group the notes into a failure taxonomy with counts\n\n## Done when\n\nA baseline experiment, pass³ per task, and a failure taxonomy with counts.\n",
+      "url": "https://github.com/rhprasad0/nova-toll-budget-agent/issues/840",
+      "repository": "https://api.github.com/repos/rhprasad0/nova-toll-budget-agent",
+      "created_at": "2026-11-19T13:49:54Z",
+      "updated_at": "2026-11-19T13:49:54Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-19T13:52:11.886122+00:00"
     }
   ],
   "history": [],
   "system": {
-    "status": "IDLE",
+    "status": "WAITING_GEMINI",
     "current_mission": null,
-    "last_scan": "2026-11-19T13:48:17.770357+00:00",
-    "total_found": 45,
+    "last_scan": "2026-11-19T13:55:44.567519+00:00",
+    "total_found": 49,
     "total_completed": 0
   }
 }
