@@ -1,13 +1,502 @@
 {
   "version": "1.0.0",
-  "updated_at": null,
-  "missions": [],
+  "updated_at": "2026-11-19T13:07:15.076745+00:00",
+  "missions": [
+    {
+      "id": "6490230412",
+      "title": "Retire slashing: SlashJudge, SlashAppeal, slash escrow and the unbonding window",
+      "description": "## Summary\n\nThe protocol has no slashable offense left once rate-manipulation slashing and blacklist slashing go. Remove the slashing machinery and everything that exists only to support it.\n\n## Why\n\n- `CapacityBond.slash` is gated by `SLASH_ROLE`, and only `SlashJudge` holds that role.\n- `SlashJudge` has two offenses. `RateManipulation` goes with the voucher-less stream open that replaces `cdn/probe/v1`. `Blacklist` goes with the reduction of `ContentBlacklist` to regional tag lists. After both, `SlashJudge` adjudicates nothing.\n- The 14-day unbonding window exists only to outlast the slash evidence window (ADR 026 § Capacity-bond curve, ADR 014 § Interaction with unbonding period). With no slash, it protects nothing.\n\n## Scope\n\n- **Contracts.** Delete `SlashJudge`, `ISlashJudge`, `SlashAppeal`, `SlashEscrowLib`. In `CapacityBond`: delete `slash`, the tier ladder (`SLASH_BPS_TIER_*`), `lifetimeOffenseCount`, escrow-on-slash and `finalizeUnappealedSlash`, `SLASH_ROLE`, `SLASH_APPEAL_ROLE` and the settle hooks, the `slashJudge` evidence-age pointer, and the `MAX_EVIDENCE_AGE_US < unbondingPeriod` cross-check. Delete the unbonding window: an exit is immediate. In `DecdnGovernor`: delete `_slashedInWindow` and the slash zero-out of vote weight.\n- **Rust.** Delete the node `slash_watcher` and the `incentive` bindings for `SlashJudge` and `SlashAppeal`. Remove slash metrics.\n- **CLI.** Delete `decdn appeal slash`. Simplify `unbond` to an immediate exit.\n- **Docs.** Move ADR 028 to `adr/_history/`. ADR 014: move the secp256k1 EIP-712 `StreamResponse` signature scheme to ADR 005 (clients and origin attestations still use it) and retire the slashing-evidence part. ADR 026: remove § Slashing and burn and the unbonding rules. ADR 036: remove § Slashing zero-out and § Slashed-but-still-voting. ADR 009: remove slash-appeal authorization. Update `adr/architecture.md`, the glossary, CLAUDE.md (the \"bounty-slash\" key design decision) and the observability appendix.\n\n## Ordering\n\nThis lands after the stream-open change that retires rate-manipulation slashing and after the `ContentBlacklist` reduction that retires blacklist slashing.\n\nPre-mainnet, so the change is ABI-breaking with no compatibility path.",
+      "url": "https://github.com/decdn/decdn/issues/2917",
+      "repository": "https://api.github.com/repos/decdn/decdn",
+      "created_at": "2026-11-19T13:05:03Z",
+      "updated_at": "2026-11-19T13:05:03Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076640+00:00"
+    },
+    {
+      "id": "6490079212",
+      "title": "Run a structured attack pass on the Codex reader and file what it finds",
+      "description": "## Now\n\nThe reader’s suite passes. Outside challengers found wrong reports, and two same-owner dry runs found cases the tests missed. In both dry runs the reader gave the correct answer at `27b77dd`. Earlier internal reviews had no list of classes to try or rule for what counts as a break. We cannot tell which classes have been tried. [Saved-approval test gap](https://github.com/chalkbadger/stay-safe/issues/107) · [System-rules test gap](https://github.com/chalkbadger/stay-safe/issues/108)\n\n## Change\n\nAdd a skill to stay-safe that lists four classes of cases for the Codex reader. Run it once. For each attempt, write a synthetic config, establish what the pinned Codex version does from its source or an existing recorded run, and compare that with the reader’s report.\n\n| Class | Starting point |\n| --- | --- |\n| One setting cancels another in the same file | `features.apps = false` beside an `[apps.*]` table. [Accepted challenge](https://github.com/chalkbadger/stay-safe/issues/109#issuecomment-6999572959) |\n| Saved approvals | Incident I26 and [#107](https://github.com/chalkbadger/stay-safe/issues/107). |\n| Configured programs | Hooks, MCP servers and `notify`. Use the public behavior reported in [openai/codex#62485](https://github.com/openai/codex/issues/62485) as a starting point and check what the pinned source establishes. |\n| Values Codex reads differently from the reader | Wrong types and legacy aliases, starting with `features.connectors`. |\n\n## After\n\nI open the checkout with a coding agent and ask for the pass. It works through the four classes using synthetic files. It runs `python3 -m stay_safe --config FILE` and leaves configured programs untouched. I get a table showing each input, the expected behavior and its source, what stay-safe reported, and one of three verdicts:\n\n- **Break.** The reader gives a wrong answer about behavior it claims to cover.\n- **Declared gap.** The report tells the user which behavior it did not check.\n- **Correct.** The report agrees with the pinned behavior on the point being checked.\n\nFor each reader mismatch, I get a filled challenge form to review and file. Suspected vulnerabilities go through the [private reporting channel](https://github.com/chalkbadger/stay-safe/blob/main/SECURITY.md).\n\n## Success\n\nThe PR publishes these observations for the reader pass:\n\n- Every class has at least one attempt. The run record gives its synthetic config, Codex citation or existing recorded run, stay-safe output and verdict. Details of suspected vulnerabilities stay in the private report.\n- At `27b77dd`, the pass re-finds the accepted `features.apps = false` case. That gives reviewers a known wrong answer against which to check the method.\n- Each new reader mismatch is filed through the challenge form and labelled `same-owner`. The run record links the filing, or the existing challenge for a known case.\n\n## Not included\n\n- Fixes to the reader. Each fix gets its own issue. This pass changes nothing under `stay_safe/` and changes no contract claim.\n- Permission profiles and the network proxy, which need reader support first.\n- Settings spread across multiple config files.\n- Work under pending disclosure.\n- Instruction files such as `AGENTS.md`.\n- Other agents.\n- Bounty terms and reopening.",
+      "url": "https://github.com/chalkbadger/stay-safe/issues/115",
+      "repository": "https://api.github.com/repos/chalkbadger/stay-safe",
+      "created_at": "2026-11-19T12:56:37Z",
+      "updated_at": "2026-11-19T12:56:50Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076672+00:00"
+    },
+    {
+      "id": "6489729829",
+      "title": "F-10 — Money-path ledger integrity: refunds never claw back, quest payouts re-arm (High)",
+      "description": "# F-10 — Money-path ledger integrity: refunds never claw back, quest payouts re-arm (High)\n\n**Consolidates:** issues [#23](../issues/issue23-stripe-refunds-never-reverse-pollen.md) (Stripe refunds/lost chargebacks never reverse credited Pollen) and [#116](../issues/issue116-quest-pr-payout-rearm.md) (quest-bounty PR payouts re-arm on body edit) — 2 issues, one surface: **the USD↔Pollen ledger has no negative feedback — money can enter twice or leave zero times.**\n\n**Status on upstream `main` @ `4e662050` — re-verified by code inspection 2026-11-19:** `stripe-webhooks.ts:841-865` still handles `refund.created/updated/failed` as log + Tinybird analytics only (no `pack_balance` write anywhere in the refund path); the quest payout path still records quest payments only under `github:issue:N` (the `github:merged_pr:N` id appears in the *check* list but is never added to the *earned* set when a quest pays — the re-arm window stays open).\n\n**Fix PRs:** [#27](https://github.com/NamanSoni78/pollinationsai/pull/27), [#131](https://github.com/NamanSoni78/pollinationsai/pull/131).\n\n---\n\n## What this chain can do, end to end\n\n**Refund fraud (issue 23) — repeatable per purchase, no maintainer involvement:**\n```\nbuy $100 pack  ->  100 Pollen credited (checkout.session.completed)\nspend the Pollen (generations, keys, transfers)\nrequest a Stripe refund / force a lost chargeback\n  -> USD returns to the attacker\n  -> Pollen stays; spent Pollen stays; credited Pollen silently diverges from collected USD\n```\nEvery `pack_balance` write in the repo is a *credit* — repo-wide there is no reversal path. `charge.dispute.*` falls to the unhandled `default`. The fraud-ban tooling only bans access; it never claws back. Partially mitigated by the hourly fraud score (one \"fraudulent\" dispute scores 0.39 < the 0.75 ban threshold; non-fraudulent reasons score 0 forever) and 3DS only for first purchases / packs < $10.\n\n**Quest payout re-arm (issue 116) — one merged PR pays K+1 times:**\n```\nopen quests 9600@$10, 9601@$25, 9602@$10 (descending rewards)\nmerge PR 9951 closing 9601  ->  pays $25 (recorded ONLY under github:issue:9601)\nedit the PR body (post-payout, post-merge) to close 9602 instead\n  -> ids checked = [github:merged_pr:9951, github:issue:9602]\n  -> earned has github:issue:9601 only  ->  PAYS AGAIN\nstrip the reference entirely  ->  the default merged-PR card pays $5 more\n```\nPayment multiplicity is fully attacker-controlled (GitHub derives closing references from the PR body, which the author can always edit); amounts are maintainer-bounded. **2026-11-19 code check:** upstream's `ids` list includes `github:merged_pr:N` (from #19983, 2026-11-17) but the quest-payment branch still records only the quest's id — the marker never enters the earned set, so the re-arm window is open exactly as reported.\n\n## Proof\n\n**issue 23 — integration suite over the signed webhook route (real D1/migrations, mocked Stripe API), contract pinned on the fix branch:**\n- full refund debits exactly once; duplicate webhook replay idempotent by refund id\n- partials scale + cumulative clamp; pending refund reverses nothing\n- lost dispute reverses; won dispute keeps the credit\n- and the gap established on unpatched HEAD: **none of these events touch `pack_balance` at all**\n- 105/105 + 58/58 suites green; migration `0083`\n- The policy decision the original design-gap note (R3-D1) requested is implemented in the PR: debit into negative balance (the platform's documented overdraft semantics), quest rewards deliberately untouched, ops-initiated reversals unaffected.\n\n**issue 116 — unit red/green on the existing Miniflare + GitHub-mock harness (PR state mutated the way a body edit would):**\n```\nseed quests 9600@10 / 9601@25 / 9602@10; PR 9951 pays 25\nmock body-edit (closingIssues [] -> [9602])\n  unpatched main: re-pays at each step           (RED)\n  with fix: pre-claimed github:merged_pr:9951 marker -> no new row, ever\n```\n\n## Members & fixes\n\n| Issue | One-line | Verification | Fork PR |\n|---|---|---|---|\n| 23 | Stripe refunds and lost chargebacks never reverse credited Pollen | Integration (4 tests; unpatched gap established) | [#27](https://github.com/NamanSoni78/pollinationsai/pull/27) |\n| 116 | Quest PR payouts re-arm by editing the merged PR's closing references | Unit red/green (body-edit simulated) | [#131](https://github.com/NamanSoni78/pollinationsai/pull/131) |\n\n## Merge guidance\n\n1. **#27** implements a policy (debit-into-negative on refund/dispute) that was explicitly deferred to maintainers — the PR is the decision; review the semantics, not just the code.\n2. **#131** ships a one-row pre-claim marker plus a documented residual (PRs merged *before* deploy can re-arm once more without a D1 backfill — the PR names it).\n3. Related but separate: the overdraft/settle-floor questions live in **F-05**; the sandbox/x402 credential axes in **F-09**.\n\nREFs:\n(GIVING GDRIVE FOLDER LINK BECAUSE I THINK GITHUB HAS MAX UPLOAD FILES PER DAY LIMIT!)\nhttps://drive.google.c",
+      "url": "https://github.com/pollinations/pollinations/issues/20332",
+      "repository": "https://api.github.com/repos/pollinations/pollinations",
+      "created_at": "2026-11-19T12:36:54Z",
+      "updated_at": "2026-11-19T12:55:22Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076675+00:00"
+    },
+    {
+      "id": "6489511875",
+      "title": "Contribution: fix(state_store_rocksdb): keep a substate's head at its highest version in any transition order (tari-project/tari-ootle#3820)",
+      "description": "Bounty for @kah-ja for contributing [tari-project/tari-ootle#3820](https://github.com/tari-project/tari-ootle/pull/3820): fix(state_store_rocksdb): keep a substate's head at its highest version in any transition order.\n\n**No further code work is required here.**\n\n## Done when\n\n@kah-ja opens a PR in this repo that follows the pattern of earlier merged PRs, with `Fixes #677` in the description and their XTM payout address on its own line.\n\n## Claim PR checklist\n\nThe claim PR is checked against this list; anything missing is pointed out on the PR.\n\n- [ ] The description says `Fixes #677`, naming this issue\n- [ ] It is opened by @kah-ja, the author of tari-project/tari-ootle#3820\n- [ ] It changes only `YYYY/MM/kah-ja_<Month>_contributions.md`\n- [ ] The description has the XTM payout address on its own line\n- [ ] No other merged PR has already claimed this issue\n",
+      "url": "https://github.com/tari-project/special_contributions/issues/677",
+      "repository": "https://api.github.com/repos/tari-project/special_contributions",
+      "created_at": "2026-11-19T12:24:21Z",
+      "updated_at": "2026-11-19T12:24:22Z",
+      "labels": [
+        "retro-bounty",
+        "bounty-S"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076677+00:00"
+    },
+    {
+      "id": "6489414048",
+      "title": "[Bug Bounty] The concentration panel prints eight 0.12² terms as equal to 0.1250",
+      "description": "The Concentration tab prints an equation that a reader cannot reproduce from its displayed operands. For eight equally weighted holdings, the app prints eight terms of 0.12² and gives their sum as 0.1250. Their sum is 0.1152. The engine correctly uses eight weights of 0.125 internally and calculates an HHI of 0.125 and eight effective assets. The discrepancy is in the displayed derivation.\n\n## Inputs\n\nIn the custom portfolio, use MSFT, AAPL, JPM, COST, GLD, XOM, TSLA and AMD. Give each holding a weight of 12.5%. An equivalent way to obtain the weights is to enter 1 for each of the eight rows and click “Normalize to 100%”. Open Concentration and expand “Mathematical derivation (HHI & Effective Assets)”.\n\n| Holdings | Terms shown | Sum from those terms | Result shown |\n| --- | --- | ---: | ---: |\n| Eight at 12.5% each | Eight × 0.12² | 0.1152 | 0.1250 |\n| Four at 25% each | Four × 0.25² | 0.2500 | 0.2500 |\n\n## Why it happens\n\nThe panel formats each fractional weight to two decimal places before printing it. The exact binary fraction 0.125 formats as 0.12 in Python. By contrast, the right-hand side comes from the engine using the original weights. In the eight-holding case, even the displayed operands add up to only 0.96.\n\n```python\nfrom decimal import Decimal\n\nweight = Decimal(\"0.125\")\nprinted_weight = Decimal(f\"{float(weight):.2f}\")\nassert 8 * printed_weight**2 == Decimal(\"0.1152\")\nassert 8 * weight**2 == Decimal(\"0.125\")\n```\n\nI ran the published concentration function and its original Markdown-rendering block in browser-hosted Python with pandas. I captured the exact equation passed to Streamlit for both rows above. This check covers the calculation and the displayed equation text. It did not exercise the live site's form controls.\n\nPrinting 0.125 for these holdings makes the illustrated derivation agree with its result. For weights with more digits than the UI displays, an approximation sign or a rounding note can keep the equation accurate. This report concerns a display logic error.\n\nThis AI-assisted report is submitted for consideration under the project's logic-error bounty. Please confirm eligibility if accepted.\n\n[Concentration panel](https://github.com/Ayush441-python/AUREN/blob/eef89475dece13ad243c6fc83d06f0ae1d1b0882/app.py#L492-L499) · [Concentration calculation](https://github.com/Ayush441-python/AUREN/blob/eef89475dece13ad243c6fc83d06f0ae1d1b0882/engine/metrics.py#L11-L19)",
+      "url": "https://github.com/Ayush441-python/AUREN/issues/132",
+      "repository": "https://api.github.com/repos/Ayush441-python/AUREN",
+      "created_at": "2026-11-19T12:19:04Z",
+      "updated_at": "2026-11-19T12:19:04Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076679+00:00"
+    },
+    {
+      "id": "6489268545",
+      "title": "Access question: PingOne console test credentials (H1 Credential Management shows none)",
+      "description": "Hello Ping Identity bug bounty team,\n\nThe program policy for the PingOne SaaS assets says:\n\n> PingOne (console.ort-one-pingone.com): Please obtain credentials via H1 Credential Management for any of the Assets starting with https://console.ort-one-pingone.com/?env=<envId>.\n\nOn our HackerOne account the program currently exposes no credential object at all. The program data served to the browser returns `asset_credentials_set_up: null` and `credential_inquiry_enabled: null`, and there is no \"Credentials\" section on the program page, the scope page, or the hacker dashboard. Both in-scope console assets (`?env=7f327541-54e0-4ba4-8335-65eac2a25b5e` and `?env=361b34ef-2725-4fd9-af1b-a2b189df3d05`) are customer tenants, so there is no self-service path to create an account.\n\nCould you advise how researchers are expected to obtain a test account for those two assets? If the intent is H1 Credential Management, enabling it for the program would be sufficient; otherwise a pointer to the intended process would help.\n\nTo be explicit about scope: we have not attempted any credential guessing, and we have not authenticated to those environments.\n\nThanks for your time.",
+      "url": "https://github.com/pingidentity/bug-bounty-server-profiles/issues/5",
+      "repository": "https://api.github.com/repos/pingidentity/bug-bounty-server-profiles",
+      "created_at": "2026-11-19T12:10:55Z",
+      "updated_at": "2026-11-19T12:10:55Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076681+00:00"
+    },
+    {
+      "id": "6489258675",
+      "title": "Railway 赏金：有 3 条值得抢",
+      "description": "云端雷达发现可抢条目。\n\n```\n[railway-radar] 2026-11-19 12:10Z total=28 hot=1 new=2\n  🆕 *.up.railway.app unreachable from Iraqi mobile networks since early November\n  🆕 AWS CloudFront (Brussels) intermittently cannot connect to the Amsterdam edge, about 1 request in 11\n  [+4] Supported non-privileged cgroup delegation and isolated helper on Railway services?\n        竞争低, 提问·配置型\n```\n\n详情: `reports/railway_bounty_latest.json`",
+      "url": "https://github.com/HCTDIP/corps-jobs/issues/205",
+      "repository": "https://api.github.com/repos/HCTDIP/corps-jobs",
+      "created_at": "2026-11-19T12:10:19Z",
+      "updated_at": "2026-11-19T12:10:19Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076683+00:00"
+    },
+    {
+      "id": "6489179812",
+      "title": "Embedded images are sent as application/octet-stream without a file extension",
+      "description": "### Mautic Series\n\n7.2.x series\n\n### Mautic installed version\n\n7.2.2 (also 7.x HEAD `e323d688a2`)\n\n### Way of installing\n\nI cloned the Mautic repo\n\n### PHP version\n\n8.5\n\n### What browsers are you seeing the problem on?\n\nNot relevant (server-side)\n\n### What happened?\n\n`convertEmbedImages()` calls `$this->message->embed($imageContent, md5($url))` without a content type (`MailHelper.php:862`). Every inline image is sent as:\n\n```\nContent-Type: application/octet-stream; name=a4bc6b406fc96b0cdb303600591d8999\nContent-Disposition: inline; filename=a4bc6b406fc96b0cdb303600591d8999\n```\n\nThere is no image MIME type and no file extension. Some clients show these parts as attachments; Mailpit lists each part both as \"Inline\" and as \"Attachment\".\n\nRelated: #13850 (closed, not merged).\n\n### How can we reproduce this issue?\n\n1. Enable \"Convert embed images to Base64\".\n2. Send an email with `<img src=\"<site_url>/media/images/test.png\">`.\n3. Check the raw message: the image part is `application/octet-stream` with an md5 filename.\n\nExpected: `Content-Type: image/png` (detected from the content) and a filename with an extension, e.g. `<md5>.png`.\n\n\n<br /><hr>\nCare about this issue? Want to get it resolved sooner? If you are a <a href='https://www.mautic.org/become-a-member-of-mautic'>member of Mautic</a>, you can add some funds to the <a href='https://opencollective.com/mautic/projects/bounties'>Bounties Project</a> so that the person who completes this task can claim those funds once it is merged by a member of the core team! Read the docs <a href='https://contribute.mautic.org/product-team/mautic-bounty-programme'>here.</a>",
+      "url": "https://github.com/mautic/mautic/issues/18270",
+      "repository": "https://api.github.com/repos/mautic/mautic",
+      "created_at": "2026-11-19T12:05:47Z",
+      "updated_at": "2026-11-19T12:06:29Z",
+      "labels": [
+        "T1",
+        "bug",
+        "needs-triage",
+        "email",
+        "good first issue"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076684+00:00"
+    },
+    {
+      "id": "6489178914",
+      "title": "Embedded images: local URLs with a query string or percent-encoding are not embedded",
+      "description": "### Mautic Series\n\n7.2.x series\n\n### Mautic installed version\n\n7.2.2 (also 7.x HEAD `e323d688a2`)\n\n### Way of installing\n\nI cloned the Mautic repo\n\n### PHP version\n\n8.5\n\n### What browsers are you seeing the problem on?\n\nNot relevant (server-side)\n\n### What happened?\n\nWith `mailer_convert_embed_images` enabled, `convertEmbedImages()` maps a URL starting with `site_url` to a local path by plain string replace (`MailHelper.php:855-857`). The query string and percent-encoding are kept, so the file is not found and the image is silently left as a remote URL:\n\n- Theme assets from `getAssetUrl()` have a cache buster: `<site_url>/themes/<theme>/assets/logo.png?v1a2b3c4d` -> looks for a file named `logo.png?v1a2b3c4d`.\n- Media files with spaces: `<site_url>/media/images/My%20File.png` -> looks for `My%20File.png` instead of `My File.png`.\n\nSince 7.2.0 the read error is suppressed (`@file_get_contents`), so the send continues but the image is not embedded. Before 7.2.0 the warning aborted the whole send.\n\n### How can we reproduce this issue?\n\n1. Enable \"Convert embed images to Base64\".\n2. Put `media/images/My File.png` on the server.\n3. Create an email with:\n   `<img src=\"<site_url>/themes/<any theme>/assets/<image>.png?v123abc\">`\n   `<img src=\"<site_url>/media/images/My%20File.png\">`\n4. Send it and check the raw message: both src values are still remote URLs, no image parts.\n\nExpected: query string and fragment are stripped and the path is URL-decoded before the file lookup, and both images are embedded.\n\n\n<br /><hr>\nCare about this issue? Want to get it resolved sooner? If you are a <a href='https://www.mautic.org/become-a-member-of-mautic'>member of Mautic</a>, you can add some funds to the <a href='https://opencollective.com/mautic/projects/bounties'>Bounties Project</a> so that the person who completes this task can claim those funds once it is merged by a member of the core team! Read the docs <a href='https://contribute.mautic.org/product-team/mautic-bounty-programme'>here.</a>",
+      "url": "https://github.com/mautic/mautic/issues/18269",
+      "repository": "https://api.github.com/repos/mautic/mautic",
+      "created_at": "2026-11-19T12:05:45Z",
+      "updated_at": "2026-11-19T12:06:35Z",
+      "labels": [
+        "T1",
+        "bug",
+        "needs-triage",
+        "email",
+        "good first issue"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076686+00:00"
+    },
+    {
+      "id": "6489178183",
+      "title": "Embedded images missing for every batch after the first when \"Convert embed images to Base64\" is on",
+      "description": "### Mautic Series\n\n7.2.x series\n\n### Mautic installed version\n\n7.2.2 (also 7.x HEAD `e323d688a2`)\n\n### Way of installing\n\nI cloned the Mautic repo\n\n### PHP version\n\n8.5\n\n### What browsers are you seeing the problem on?\n\nNot relevant (server-side)\n\n### What happened?\n\nWith `mailer_convert_embed_images` enabled, only the first `sendEmail()` call in a process gets the image parts. Contacts in later batches receive HTML with `src=\"cid:<md5>\"` but no matching MIME part, so the images are broken.\n\nCause: `MailHelper::$embedImagesReplaces` (URL -> `cid:` map) is never cleared. `reset(true)` creates a new message (`MailHelper.php:641`), and `SendEmailToContact::setEmail()` calls it via `flush()` for each batch. On the next batch, `convertEmbedImages()` applies the old map first (`:839`), then skips every `cid:` src (`:844`), so `embed()` is never called on the new message.\n\nThis affects any long-running process that reuses MailHelper: broadcast batches, several broadcasts in one cron run, `mautic:campaigns:trigger`. Same symptom as the old #9003 and #9819.\n\n### How can we reproduce this issue?\n\n1. Enable Configuration > Email Settings > \"Convert embed images to Base64\".\n2. Create a segment email with `<img src=\"<site_url>/media/images/test.png\">`, segment with 4 contacts.\n3. Run `bin/console mautic:broadcasts:send -i <id> --batch=2`.\n4. Check the raw messages (e.g. in Mailpit):\n   - Contacts 1-2: `multipart/related`, image part attached, `src=\"cid:<id>@symfony\"`.\n   - Contacts 3-4: only `multipart/alternative`, no image part, `src=\"cid:<md5>\"` - broken image.\n\nExpected: every message contains its image parts.\n\n\n<br /><hr>\nCare about this issue? Want to get it resolved sooner? If you are a <a href='https://www.mautic.org/become-a-member-of-mautic'>member of Mautic</a>, you can add some funds to the <a href='https://opencollective.com/mautic/projects/bounties'>Bounties Project</a> so that the person who completes this task can claim those funds once it is merged by a member of the core team! Read the docs <a href='https://contribute.mautic.org/product-team/mautic-bounty-programme'>here.</a>",
+      "url": "https://github.com/mautic/mautic/issues/18268",
+      "repository": "https://api.github.com/repos/mautic/mautic",
+      "created_at": "2026-11-19T12:05:42Z",
+      "updated_at": "2026-11-19T12:09:31Z",
+      "labels": [
+        "T1",
+        "bug",
+        "needs-triage",
+        "email",
+        "good first issue"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076687+00:00"
+    },
+    {
+      "id": "6489162358",
+      "title": "Features described in the docs but not built yet",
+      "description": "Features that the design docs ([bestia-docs](https://github.com/tfelix/bestia-docs)) describe but `main` does not have yet. Comparison done on 2026-11-19 (behemoth `287d737af`, docs `d908bad`).\n\nItems in flight in open PRs are not listed (quest endings: #450, #451).\n\nPaths: `Z` = `zone-server/src/main/kotlin/net/bestia/zone`.\n\n## Whole systems not started\n\n- [ ] **Doomsday** — threat stages (Omens → Cataclysm), 13 event types, world lifespan, rebuilding the world. The client sky mood hook exists (`sky_mood.gd`), nothing drives it. *(mechanics/world/doomsday)*\n- [ ] **Factions / Orders for players** — swear, switch, covenants, advantage points, Order skill tree. `Z/honor/OrderAllegiance.kt` always returns false. Blocks War Zones and Covenant Watch. *(society/factions)*\n- [ ] **Cluster / spatial cells** — partition, gateway, ghosts, handoff. *(server/cluster-path, server/spatial-cells)*\n- [ ] **World events** — regional director, rifts, contribution scoring; mana emitters and sinks (mana is a static worldgen field today). *(world/questing, world/environment)*\n- [ ] **Guild strongholds** — Steward, Guild Storage, Watchers. Only `NoGuildStrongholds` exists. *(society/party-guild)*\n- [ ] **PvP: War Zones and Shrines of Judgement** *(society/pvp)*\n\n## Master skills without implementation\n\n- [ ] **Alchemist** — Alchemy, Alchemy Mastery, Transmutation, Alchemy Laboratory, potion recipes\n- [ ] **Artificer** — Runic Etching + essence gems into sockets, Magic Artisan (Enchantment Altar), Mana Harvester, Manaflow Expert (Crystal Lathe)\n- [ ] Observation, Scavenger (incl. item recycling), Honorable Citizen have no effect\n- [ ] Gem Cutting and Minting recipes have no station\n\n## Partly built\n\n- [ ] **Commissions** — Transport, Bounty, Escort; assigned commissions with collateral; item and EXP rewards (`QuestReward.Kind` is coins only) *(world/questing)*\n- [ ] **Generated quests beyond lost relics** — shortage, damage, rumour sources; other history threads (heirloom, vengeance, seal, boss, cult, …); god quests; found-thing and blackboard givers; cap per region *(server/quest-manager, world/pantheon)*\n- [ ] **Death penalty** — respawn on the spot, 15% status malus, items to storage, durability loss; permanent Bestia death on overkill. Only the 1% EXP loss exists (`PlayerDeathSystem.kt`). *(bestias/bestia)*\n- [ ] **Weather per species** — comfort window per species, VIT/WIL widening, weather likes/dislikes, rest in the bag. `EnvironmentalExposureSystem` uses one band for all. *(weather-and-bestia)*\n- [ ] **Weather in combat and AI** — wet weather element modifier, fog lowers AI sight; weather-dependent crops (no farming yet), items failing at extreme temperature *(world/environment)*\n- [ ] **Economy** — World Treasury Director, NPC float, repair/upkeep sinks, Minting recovery rate *(server/economy, server/money-supply)*\n- [ ] **Postal** — post notes (gold by pigeon), dispatches (orders by road), office level upgrades *(towns-trade/postal)*\n- [ ] **Companion app v2+** — whispers, ranging and mana work, Broker's Wire, trading by dispatch, musters; auction/breeding/harvester timers in \"What arrives\" *(companion-app)*\n- [ ] **Combat**\n  - [ ] Line of sight — `Z/battle/LineOfSightService.kt` always returns `true`\n  - [ ] MAGIC attack strategy — falls through to melee (`AttackStrategyFactory.kt`)\n  - [ ] Size modifier in damage (`BaseDamageCalculator.kt`)\n  - [ ] Low-stamina effects (slow walk < 30%, no regen < 10%, HP drain < 5%)\n  - [ ] Special ammo effects (hook `AmmoEffectRegistry` exists, no content)\n- [ ] **Dynamic text** — LLM prose job, books, German locale *(server/dynamic-text, world/world-history)*\n\n## Smaller gaps\n\n- [ ] Bestia orders: Follow job, storm shelter, jobs per species, allowed care items, out-of-food notice *(bestias/bestia-orders)*\n- [ ] EXP sources: travel, construction, master gathering, support skills\n- [ ] Rolled random stats on loot drops (`MobLootSpawner.kt`)\n- [ ] Fishing: catch tables by biome/weather/water, bait, fishing bestias, sealed-bottle contents\n- [ ] Special gear effect scripts (miner's lamp helm, band of a thousand bargains, …); client art for ~276 of 613 items\n- [ ] Teleport and Warp Portal ignore Disturbance (only Scry uses it)\n- [ ] Chart gates for spells, AI movement, prospecting; magical shared maps\n- [ ] Felled woods lower timber output (`SettlementDamage.kt`; its \"no log item\" comment is out of date)\n- [ ] Ore deposits running out; building interiors\n- [ ] Choose inherited attacks with spell scrolls (`ClutchRoll.kt`)\n- [ ] Gods' traces in towns: temple looks, customs, festivals, sparing the sacred bestia\n- [ ] Mob hard DEF/MDEF; temperament in compendium; client greys out armor a Bestia cannot wear\n- [ ] Shared party loot (still undecided in the docs)\n\n## Client only (server side exists)\n\n- [ ] `/w` whisper — dropped in `bestia-client/src/Game/UI/Chat/chat.gd` (FIXME)\n- [ ] DECIDE quest choice — `connection_manager.gd` `decide_quest()` has no caller\n- [ ] Window for readable things",
+      "url": "https://github.com/tfelix/bestia-behemoth/issues/452",
+      "repository": "https://api.github.com/repos/tfelix/bestia-behemoth",
+      "created_at": "2026-11-19T12:04:52Z",
+      "updated_at": "2026-11-19T12:04:52Z",
+      "labels": [
+        "enhancement"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076689+00:00"
+    },
+    {
+      "id": "6488756516",
+      "title": "[Bug Bounty] ai_report() sends Groq/reasoning-only parameters (include_reasoning, reasoning_effort) to non-reasoning models and non-Groq providers",
+      "description": "## Summary\n\n`engine/report.py::ai_report()` documents support for any OpenAI-compatible chat endpoint (Groq, OpenAI, Ollama, OpenRouter), but its request payload builder misclassifies models and sends unsupported reasoning parameters in three cases:\n\n1. **Non-reasoning models on Groq** (e.g., `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`): `\"groq.com\" in base_url` forces `reasoning = True`, unconditionally sending Groq's reasoning-only `include_reasoning: false` and `reasoning_effort: \"low\"` (which Groq's `/openai/v1/chat/completions` endpoint rejects with HTTP 400 `invalid_request_error` on standard Llama models) and dropping the `system` message role.\n2. **Non-reasoning models on OpenAI / Ollama / OpenRouter** (e.g., `gpt-4o-mini`, `llama3.2`): even when `reasoning` evaluates to `False`, `payload[\"reasoning_effort\"] = effort` runs outside `if reasoning:`, sending `reasoning_effort` to models that reject it.\n3. **`gpt-oss` on non-Groq providers** (e.g., OpenRouter / OpenAI-compatible endpoints): `\"gpt-oss\" in model` sends Groq-specific `include_reasoning: false` to endpoints outside `groq.com`.\n\n## Affected Upstream Commit\n`eef89475dece13ad243c6fc83d06f0ae1d1b0882`\n\n## Supported Input / Workflow\n- Streamlit dashboard **AI Report** tab (`app.py:856-875`) calling `ai_report(metrics, base_url, api_key, model)` with any non-`gpt-oss` Groq model (e.g., `LLM_MODEL=llama-3.3-70b-versatile`), OpenAI (`gpt-4o-mini`), or Ollama (`llama3.2` from `.env.example`).\n- Direct calls to `engine.report.ai_report()`.\n\n## Minimal Reproduction (Offline, No API Key)\n\nRun from the repository root:\n\n```python\nfrom unittest.mock import MagicMock, patch\nfrom engine.report import ai_report\n\nmetrics = {\"risk_score\": 70, \"risk_level\": \"High\"}\ncases = [\n    (\"Groq Llama\", \"https://api.groq.com/openai/v1\", \"gsk-test\", \"llama-3.3-70b-versatile\"),\n    (\"OpenAI gpt-4o-mini\", \"https://api.openai.com/v1\", \"sk-test\", \"gpt-4o-mini\"),\n    (\"Ollama llama3.2\", \"http://localhost:11434/v1\", \"\", \"llama3.2\"),\n    (\"OpenRouter gpt-oss\", \"https://openrouter.ai/api/v1\", \"or-test\", \"openai/gpt-oss-120b\"),\n]\n\nfor label, url, key, model in cases:\n    resp = MagicMock(ok=True)\n    resp.json.return_value = {\"choices\": [{\"message\": {\"content\": \"Score is 70.\"}}]}\n    with patch(\"engine.report.requests.post\", return_value=resp) as mock_post:\n        ai_report(metrics, url, key, model)\n        p = mock_post.call_args.kwargs[\"json\"]\n    print(\n        label,\n        \"-> include_reasoning:\", p.get(\"include_reasoning\"),\n        \"reasoning_effort:\", p.get(\"reasoning_effort\"),\n        \"roles:\", [m[\"role\"] for m in p[\"messages\"]],\n    )\n```\n\n## Expected Result\n- Non-reasoning models (`llama-3.3-70b-versatile`, `gpt-4o-mini`, `llama3.2`): neither `include_reasoning` nor `reasoning_effort` is sent; `messages` uses `[\"system\", \"user\"]` with `max_tokens: 1500`.\n- `openai/gpt-oss-120b` on non-Groq endpoints: `include_reasoning` is omitted.\n- Default Groq + `openai/gpt-oss-120b`: unchanged (`include_reasoning: false`, `reasoning_effort: \"low\"`, `max_completion_tokens: 4096`).\n\n## Actual Result\n```text\nGroq Llama -> include_reasoning: False reasoning_effort: low roles: ['user']\nOpenAI gpt-4o-mini -> include_reasoning: None reasoning_effort: low roles: ['system', 'user']\nOllama llama3.2 -> include_reasoning: None reasoning_effort: low roles: ['system', 'user']\nOpenRouter gpt-oss -> include_reasoning: False reasoning_effort: low roles: ['user']\n```\n\n## Root Cause\nIn [`engine/report.py` (lines 34–53)](https://github.com/Ayush441-python/AUREN/blob/eef89475dece13ad243c6fc83d06f0ae1d1b0882/engine/report.py#L34-L53):\n- Line 34 sets `reasoning = \"gpt-oss\" in (model or \"\") or \"groq.com\" in (base_url or \"\")`, conflating the Groq host with reasoning models.\n- Line 42 sets `payload[\"include_reasoning\"] = False` unconditionally inside `if reasoning:`, even for non-Groq endpoints.\n- Lines 51–53 attach `payload[\"reasoning_effort\"] = effort` unconditionally outside `if reasoning:`.\n\n## User Impact\nUsers configuring AUREN's AI Report tab with standard Groq models (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) or non-reasoning OpenAI models (`gpt-4o`, `gpt-4o-mini`) receive HTTP 400 errors from the provider API instead of a generated risk report, even when `LLM_REASONING_EFFORT` is unset on Groq (because `include_reasoning` is hardcoded).\n\n## Duplicate Check\n- #113 (and PRs #115, #123) covers `engine/env.py::load_env()` shadowing Streamlit secrets with `os.environ.setdefault(...)`. Neither PR modifies `engine/report.py`; even with #113 fixed, `ai_report()` still unconditionally sends `include_reasoning: false` for all `groq.com` models and `reasoning_effort` for non-reasoning models whenever `LLM_REASONING_EFFORT` is configured.\n- #112 (and PRs #116, #122) covers `clean_output()` unclosed `<think>` tags and `finish_reason == \"length\"`.\n- #64, #65, #93, #110 cover stale snapshots and `unverified_numbers()`.\n\n## Suggested Fix\nGate `reasoning` on the model (`\"gpt-oss\" in (model or \"\").lo",
+      "url": "https://github.com/Ayush441-python/AUREN/issues/130",
+      "repository": "https://api.github.com/repos/Ayush441-python/AUREN",
+      "created_at": "2026-11-19T11:40:53Z",
+      "updated_at": "2026-11-19T11:40:53Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076690+00:00"
+    },
+    {
+      "id": "6488710881",
+      "title": "Source check 2026-11-19",
+      "description": "## Official source re-check\n\n- checked: 2026-11-19T11:38:05Z on GitHub Actions run 44515450694\n- official sources reachable: 99 / 109 (HTTP check run by this script on 2026-11-19)\n- pages re-rendered without a value change: 0\n- pages whose published values changed: 4\n- rows marked for re-reading: 4\n\n### Marked rows\n\n- **Caesars Palace** (None, `caesars`, hotel)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:43:10Z -> 2026-11-19T06:02:06Z (https://www.caesars.com/corporate/disclaimer)\n  - source: https://www.caesars.com/corporate/disclaimer\n- **Horseshoe Las Vegas** (None, `rooms03`, strip-room)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:44:11Z -> 2026-11-19T11:38:05Z (https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip)\n  - source: https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip\n- **Daily No Limit Hold'em (six sessions; buy-ins not printed)** (None, `formats05`, strip-room)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:44:11Z -> 2026-11-19T11:38:05Z (https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip)\n  - source: https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip\n- **$200 No Limit Hold'em Progressive Knock-Out Bounty $8K GTD (1Day)** (2026-11-23, `r012`, tournament)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:40:58Z -> 2026-11-19T05:59:56Z (https://www.venetianlasvegas.com/content/dam/vlvweb/casino/poker/deepstack/2026/structures/dse_nov_2026-structure_30.pdf)\n  - source: https://www.venetianlasvegas.com/content/dam/vlvweb/casino/poker/deepstack/2026/structures/dse_nov_2026-structure_30.pdf\n---\n\nRe-read the affected structure sheets or policy pages before trusting a marked row.\nAfter that, re-run this workflow with 'Accept today's content as the new comparison baseline' = yes.\n",
+      "url": "https://github.com/karagemop466-tech/Poker1/issues/114",
+      "repository": "https://api.github.com/repos/karagemop466-tech/Poker1",
+      "created_at": "2026-11-19T11:38:08Z",
+      "updated_at": "2026-11-19T11:38:08Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076692+00:00"
+    },
+    {
+      "id": "6488669679",
+      "title": "Harden `frontend/public/service-worker.js` cache strategy against stale API and wallet state",
+      "description": "## Overview\nThis issue addresses PWA caching security, data freshness, and offline resilience in `frontend/public/service-worker.js` and `frontend/src/utils/serviceWorker.ts`.\n\n## Technical Scope\nAudit `frontend/public/service-worker.js` to ensure `/api/` JSON responses, `/bounties/stream` SSE streams, `/tx/*` POST requests, and cross-origin RPC calls are strictly `network-only` (never cached), version cache keys cleanly on deploy so old assets are pruned on `activate`, and avoid caching error (`!res.ok`) or opaque responses. Ensure adherence to Service Worker security and cache-hygiene best practices.\n\n## Requirements\n- Audit fetch/install/activate handlers in `frontend/public/service-worker.js` and registration logic in `frontend/src/utils/serviceWorker.ts`.\n- Enforce strict bypass rules for API/SSE/RPC/mutation requests, cache-version cleanup on activate, and safe error fallbacks.\n- Include unit/e2e tests verifying API responses and SSE streams are never served from Cache Storage.\n\n## Acceptance Criteria\n- `cd frontend && npx vitest run` and Playwright smoke checks pass cleanly.\n- Code formats cleanly with Prettier and passes ESLint.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1293",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:35:43Z",
+      "updated_at": "2026-11-19T12:35:49Z",
+      "labels": [
+        "security",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076693+00:00"
+    },
+    {
+      "id": "6488666418",
+      "title": "Fix protocol-relative URL bypass and double-escaping bugs in `frontend/src/lib/markdown.ts`",
+      "description": "## Overview\nThis issue addresses XSS/phishing mitigation and Markdown rendering correctness in `frontend/src/lib/markdown.ts`.\n\n## Technical Scope\nHarden `sanitizeUrl` and `renderInline` in `frontend/src/lib/markdown.ts` so protocol-relative URLs (`//evil.example/phish`) are blocked (currently permitted by `SAFE_URL = /^(https?:\\/\\/|mailto:|\\/|#|\\.)/i` matching leading `/`), validate URLs prior to HTML entity escaping so query strings with `&` do not corrupt or bypass scheme checks, strip ASCII control characters, and add safe handling for nested/malformed brackets. Ensure adherence to OWASP XSS-prevention standards.\n\n## Requirements\n- Audit `escapeHtml`, `sanitizeUrl`, `renderInline`, and `renderMarkdown` in `frontend/src/lib/markdown.ts` and `frontend/src/components/BountyDescription.tsx`.\n- Reject `//` protocol-relative links, control chars, and obfuscated schemes (`java\\tscript:`), while preserving safe relative paths (`/bounties/1`, `#section`) and valid query parameters.\n- Include Vitest security unit tests covering XSS payloads, protocol-relative URLs, entity-encoded schemes, and ampersands in HTTPS links.\n\n## Acceptance Criteria\n- `cd frontend && npx vitest run` passes all Markdown security tests.\n- Code formats cleanly with Prettier and passes ESLint and `tsc --noEmit`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1289",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:35:32Z",
+      "updated_at": "2026-11-19T12:39:58Z",
+      "labels": [
+        "bug",
+        "security",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076695+00:00"
+    },
+    {
+      "id": "6488664780",
+      "title": "Add cross-language Soroban XDR golden fixture tests and bundle-size gate in `sdk/`",
+      "description": "## Overview\nThis issue addresses ABI drift prevention and bundle efficiency in `@mergemint/sdk` (`sdk/src/index.test.ts`, `sdk/.size-limit.json`).\n\n## Technical Scope\nGenerate canonical base64 XDR golden fixtures from Rust (`src/scval.rs` / `src/test.rs`) for `Bounty`, `BountyMeta`, `Contributor`, `Milestone`, `CreateBountyParams`, and `Option<T>` values, and assert in `sdk/src/index.test.ts` that TypeScript `ScVal` encoders/decoders match Rust XDR byte-for-byte while enforcing `.size-limit.json` in CI. Ensure adherence to cross-language contract-testing and tree-shaking standards.\n\n## Requirements\n- Audit `sdk/.size-limit.json`, `sdk/tsup.config.ts`, `docs/shared-type-generation.md`, and `sdk/src/index.test.ts`.\n- Add golden XDR fixture parity tests validating both encode and decode paths between Rust and TypeScript.\n- Verify tree-shaking and bundle-size budgets remain within `.size-limit.json` thresholds.\n\n## Acceptance Criteria\n- `cd sdk && npm test`, `npm run build`, and `size-limit` pass cleanly.\n- Code formats cleanly with Prettier and passes ESLint and `tsc --noEmit`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1287",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:35:26Z",
+      "updated_at": "2026-11-19T12:46:28Z",
+      "labels": [
+        "performance",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076696+00:00"
+    },
+    {
+      "id": "6488663167",
+      "title": "Align `react/src/index.ts` `useBounties` pagination with cursor-based SDK API",
+      "description": "## Overview\nThis issue addresses API compatibility and pagination reliability in `@mergemint/react` (`react/src/index.ts`).\n\n## Technical Scope\nReconcile `useBounties` in `react/src/index.ts`—which currently passes `{ start, limit }` to `sdk.getBountiesByCreator` and expects `{ bounties, hasMore }`—with the actual cursor-based `(cursor, limit) -> { items, nextCursor }` pagination contract in `sdk/src/pagination.ts` and `src/contract/queries.rs`, preventing duplicate items or race conditions during concurrent `refetch`/`loadMore`. Ensure adherence to React async-state and TypeScript strict-typing standards.\n\n## Requirements\n- Audit `useBounties` in `react/src/index.ts` against `sdk/src/index.ts` and `sdk/src/pagination.ts`.\n- Track opaque `nextCursor` state, cancel stale requests on `creator` change, and eliminate `any`/type drift between `react` and `sdk`.\n- Include unit tests covering initial fetch, `loadMore`, end-of-list (`nextCursor === null`), and error recovery.\n\n## Acceptance Criteria\n- `cd react && npm run build` and unit tests pass cleanly.\n- Code formats cleanly with Prettier and passes ESLint and `tsc --noEmit`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1285",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:35:21Z",
+      "updated_at": "2026-11-19T12:48:04Z",
+      "labels": [
+        "refactor",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076698+00:00"
+    },
+    {
+      "id": "6488658255",
+      "title": "Fix Soroban XDR `Option<T>` encoding in `optionVecAddressToScVal` and `optionU32ToScVal`",
+      "description": "## Overview\nThis issue addresses critical Soroban ABI compatibility and transaction serialization correctness in `@mergemint/sdk` (`sdk/src/index.ts`).\n\n## Technical Scope\nFix `optionVecAddressToScVal` and `optionU32ToScVal` in `sdk/src/index.ts` (lines 107–129), which currently encode `Option::Some(v)` as an `ScMap({ \"Some\": v })` instead of Soroban's actual `Option` XDR wire format (bare inner `ScVal` for `Some(v)` and `xdr.ScVal.scvVoid()` for `None`), preventing contract simulation/invocation failures on `create_bounty` with deadlines or `required_verifiers`. Ensure adherence to Soroban XDR specification and SDK interoperability standards.\n\n## Requirements\n- Audit all `ScVal` encoders/decoders in `sdk/src/index.ts` (`optionVecAddressToScVal`, `optionU32ToScVal`, `parseBounty`, `parseContributor`).\n- Encode `Option::Some(v)` as the inner `ScVal` directly and `Option::None` as `xdr.ScVal.scvVoid()`, matching `soroban-sdk` 29.0.1 wire format.\n- Include unit tests in `sdk/src/index.test.ts` verifying XDR output against Soroban `Val` test vectors for `Some` and `None`.\n\n## Acceptance Criteria\n- `cd sdk && npm test` passes with verified XDR round-trip fixtures.\n- Code formats cleanly with Prettier and passes ESLint and `tsc --noEmit`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1279",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:35:04Z",
+      "updated_at": "2026-11-19T12:51:19Z",
+      "labels": [
+        "bug",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076699+00:00"
+    },
+    {
+      "id": "6488656659",
+      "title": "Enforce OpenAPI snapshot drift check and contract-to-backend integration test coverage",
+      "description": "## Overview\nThis issue addresses API contract stability and schema-drift prevention in `mergemint-backend/openapi.snapshot.json` and `mergemint-backend/src/routes/`.\n\n## Technical Scope\nEnsure every Axum route, query parameter, error response, and schema under `mergemint-backend/src/routes/` (`bounties`, `feed`, `leaderboard`, `reputation`, `stats`, `tx`, `webhooks`) is annotated with `utoipa::path`/`ToSchema`, verified against `openapi.snapshot.json` via `jsonschema` in tests, and aligned with `frontend/src/lib/api.ts`. Ensure adherence to OpenAPI 3.1 contract-testing standards.\n\n## Requirements\n- Audit `mergemint-backend/openapi.snapshot.json`, `mergemint-backend/docs/api.md`, and all route modules.\n- Implement automated tests validating serialized responses from live router handlers against the generated OpenAPI schemas.\n- Fail CI if route signatures change without updating `openapi.snapshot.json` and `mergemint-backend/CHANGELOG.md`.\n\n## Acceptance Criteria\n- `cargo test` in `mergemint-backend` passes with zero OpenAPI snapshot drift.\n- Code formats cleanly with `cargo fmt` and passes `cargo clippy -- -D warnings`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1277",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:34:59Z",
+      "updated_at": "2026-11-19T12:56:01Z",
+      "labels": [
+        "ci",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076700+00:00"
+    },
+    {
+      "id": "6488655100",
+      "title": "Harden full-text search, sort parameters, and cursor decoding in `mergemint-backend/src/routes/bounties.rs`",
+      "description": "## Overview\nThis issue addresses query security, SQL performance, and input validation in `mergemint-backend/src/routes/bounties.rs`.\n\n## Technical Scope\nAudit full-text search (`0004_add_bounty_full_text_search.sql`), dynamic `QueryBuilder` clauses, `sort`/`order` enums, `limit` caps, and base64 cursor decoding in `mergemint-backend/src/routes/bounties.rs` to ensure strict parameterized queries, bounded search-query lengths, graceful `400 Bad Request` on malformed cursors, and index-backed pagination. Ensure adherence to SQLx security and PostgreSQL query-plan best practices.\n\n## Requirements\n- Audit `mergemint-backend/src/routes/bounties.rs` and `mergemint-backend/src/routes/feed.rs`.\n- Implement strict validation on search query length/characters (`plainto_tsquery` / `websearch_to_tsquery`), cursor payload bounds, and `limit` clamping (`1..=50`).\n- Include unit tests covering malformed base64 cursors, oversized queries, SQL meta-characters, and empty result pagination.\n\n## Acceptance Criteria\n- `cargo test` in `mergemint-backend` passes cleanly.\n- Code formats cleanly with `cargo fmt` and passes `cargo clippy -- -D warnings`.",
+      "url": "https://github.com/mergemint-mint/mergemint-contracts/issues/1275",
+      "repository": "https://api.github.com/repos/mergemint-mint/mergemint-contracts",
+      "created_at": "2026-11-19T11:34:53Z",
+      "updated_at": "2026-11-19T12:57:00Z",
+      "labels": [
+        "security",
+        "Stellar Wave"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076703+00:00"
+    },
+    {
+      "id": "6490216860",
+      "title": "Client: Account Session requests to the Admin have no timeout",
+      "description": "## What happens\n\nThe Client's requests made on behalf of a logged-in customer (Voucher redemption, Points redemption, Time Transfer, Guest Time claim, wheel spin, Points Transfer Request, Password Change, logout, the Redemption Tier / Coin Promo / wheel settings reads, and the Daily Reward calls) are sent with `reqwest::Client::new()` and no timeout.\n\nIf the Admin accepts the connection and then stalls, the Tauri command never returns, so the busy state in the Widget or Fullscreen Lock never clears.\n\n## Where\n\n`apps/client/src-tauri/src/account_request.rs` (`send`) now carries this sequence for the migrated commands; the rest are still in `apps/client/src-tauri/src/commands.rs` and `attendance.rs` until they move over. One timeout in `send` would cover all of them once the migration is finished.\n\n## Open question\n\nSeveral of these requests move money or time. If the Client gives up on a request the Admin has already committed (a Voucher redeemed, Points spent), what should the customer see, and how does local state catch up? The heartbeat corrects the timer, but the customer-facing message needs a decision. That is why this was left out of the refactor that introduced the module.\n\nNot reproduced; found by reading the code.\n",
+      "url": "https://github.com/H3atman/openpiso/issues/25",
+      "repository": "https://api.github.com/repos/H3atman/openpiso",
+      "created_at": "2026-11-19T13:04:17Z",
+      "updated_at": "2026-11-19T13:04:17Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076704+00:00"
+    },
+    {
+      "id": "6490060113",
+      "title": "Events that fit the Chorus and the Eclipse (seeded check first)",
+      "description": "Owner: codex\nBrief: below; Rey's chair handoff item T14 and drop X8 (summarised here); the lore audit's event appendix (eight worst offenders: merc, mutiny, pilot, deserters, veterans, reactor, convoy, auction); godot/campaign/data/campaign_tables.json (events, the astropath faction-variant pattern), godot/campaign/campaign.gd (event eligibility), campaign_run.js and data.js if parity covers events, docs/playbooks/ (lore voice for the Chorus and Eclipse)\nDeliver to: the event tables and eligibility code, a seeded event-distribution check under godot/campaign/test/ with its line in godot/tools/ci/godot_checks.txt, contrib/codex/events_1119/README.md\nBranch: codex/issue-1149\nBase: main\nEffort (Codex): high\nDone when: across a seeded set of runs per faction, no human-crew event fires for the Chorus or Eclipse in human wording, and event frequency and reward totals per faction stay within the band the README states (before and after compared); rules parity and the standing and Godot game checks pass. What Ryan will see: Chorus and Eclipse runs whose events make sense for a hive and a machine faction.\n\n## THIS IS THE JOB NOW (Board, Nov 19 2026, 13:20 UTC): events that fit the Chorus and the Eclipse\n\nWhy. Only 2 of 33 events carry faction text variants, and 26 of 33 can fire for the Chorus and Eclipse in human wording (mercenaries, mutiny, pilots, deserters). Ryan asked that no finding be dropped (R328). Gating events is not balance-neutral, so this is test first.\n\n1. First write the seeded event-distribution check: for each of the six factions, N seeded runs (name N), event counts and reward totals by event. Run it on main and keep the numbers.\n2. Give the eight worst offenders faction variants (or eligibility gates where no variant makes sense), following the existing astropath pattern, in each faction's voice. Rename the Chorus Nemesis traits \"Boarding gangs\" and \"Thin stern plating\" to biological names.\n3. Rerun the check: report before and after per faction, and keep each faction's reward totals and needed routing inside the band you state. Prefer text variants over gates, since variants leave the distribution unchanged.\n4. Campaign lookup keys stay unchanged; only display text and eligibility change.\n\n\n---\n_Generated by [Claude Code](https://claude.ai/code)_",
+      "url": "https://github.com/rcbailey12/voidsworn/issues/1149",
+      "repository": "https://api.github.com/repos/rcbailey12/voidsworn",
+      "created_at": "2026-11-19T12:55:34Z",
+      "updated_at": "2026-11-19T12:56:42Z",
+      "labels": [
+        "codex",
+        "blocked",
+        "running"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076705+00:00"
+    },
+    {
+      "id": "6490059700",
+      "title": "Truth pass 2: the audits' remaining text and gating fixes",
+      "description": "Owner: codex\nBrief: below; the first-player audit (Google Drive, embers_first_player_audit_2026-11-18.md, gaps 2 to 5, line references at dfbb5ef6) and Rey's chair handoff (chair_handoff_for_claude.md, items F3, F4, F6 to F11 and its corrections 4 and 5), both summarised below so you do not need Drive; godot/ui/battle/ledger.gd, godot/scenes/battle/battle.gd (TIPS, _tutorial, _arrive, Brace tooltip), godot/rules/rules.gd (canFade, fire, cmdDesc, braceCover, canOrder, FAC_GATES), godot/ui/campaign/campaign_tips.gd, godot/ui/campaign/campaign_ui.gd, godot/ui/campaign/campaign_view.gd, godot/campaign/campaign.gd, godot/campaign/data/campaign_tables.json, tools/onboarding_cards.json, godot/campaign/test/onboarding_test.gd, godot/campaign/test/boon_fleet_test.gd\nDeliver to: the files above that each fix needs, tests under godot/**/test/ with their lines in godot/tools/ci/godot_checks.txt, contrib/openai/truth_pass2_1119/README.md (one row per item: fixed, or why not, with the test that covers it)\nBranch: work/issue-1147-openai\nBase: work/issue-1144-openai\nEffort: OpenAI seat (openai arm, gpt-6.2-sol, high), cap 10800 s\nDone when: every item below is fixed as text or gating, or explained in the README with the caller trace that shows it is not visible; a test covers each fix where one fits; the onboarding test, rules parity, the standing checks and the Godot game checks pass. What Ryan will see: tooltips, cards and selection text that say what the game actually does.\n\n## THIS IS THE JOB NOW (Board, Nov 19 2026, 13:20 UTC): the rest of the audits' text and gating fixes\n\nWhy. Ryan approved the review and asked that no finding be dropped, code ones first (R328, Nov 19 12:53 UTC). Issue 1144 (your Base) fixes the volley preview, the Warden reinforcement, the Placeholder text, the Nemesis banner and the onboarding test. This job takes every other text and gating item. Rule for every item: re-locate the line on your checkout (audit line numbers drift), trace the caller to what actually renders, and fix only what is provably shown wrong. Text follows code; do not change rules or prices in this job.\n\nBattle (first-player audit gaps 2 and 3):\n1. The \"Fired\" keyword tooltip (ledger.gd keyword_tip) promises half movement after firing for every faction; only Glasswrights or the r_slip protocol keep post-fire movement. Make it conditional, matching battle.gd's own conditional phrasing.\n2. Admiral's Command: show what it does (cmdDesc for the current tier, and what waiting a round adds) in its tooltip before it is used. The resolve card says the button \"glows gold while it is ready\", but it renders bone white until armed: make the card and the button agree (pick the smaller change).\n3. Sunward Brace gives adjacent same-facing allies cover (braceCover); say so in the Brace tooltip and order text for Sunward ships.\n4. The objective teaching card is gated to Battle 3 but Battle 2 always has a non-rout objective: show it from Battle 2 and add a Battle 2 test to onboarding_test.gd. The card says \"the bar at the top\": point it at the top-left cluster. reinforce_warn says \"a banner will name the ship\" but the name is in the toast; align the words, and trigger it from the rules' own warning round, not only round + 1.\n\nCampaign cards and screens (gap 4 and 5):\n5. c_shipyard fires on free Drydocks and Field Repairs and promises credits, gun swaps and buying ships: fire it only at shipyards, and say refits swap modules, not guns. Give drydock and field repair stops a true line of their own if they need one.\n6. c_reward promises \"guns and parts\" and automatic scrapping when the fleet is full: describe protocols, refits, and Strip or Ransom for a full fleet. c_clock says the clock \"runs out\": it fills and pulls one Nemesis meeting forward. c_tree is dead (admiralXPToSpend does not exist): hook it to a lineage pick being available, or remove it. Keep tools/onboarding_cards.json in sync.\n7. The shipyard header prints \"Repairs cost 1 credit per 2 hull\" even when priceMult() is not 1: print the real rate.\n8. Glasswrights cannot Brace, but Brace protocols (d_bastion, i_brace, i_wall) are offered and the #1075 note says they affect Glasswright ships: make the relevance note say they do nothing for this fleet (read-only, keep offer RNG unchanged), and add an ithar case to boon_fleet_test.gd. The select card tells every faction to Brace: add the Glasswright exception.\n\nCouncil fix-now text items (chair handoff):\n9. F3: the Beat 3 payoff prints on Sector I and II losses (pixel-confirmed): gate it on the run flag; beat3Debrief repeats on every Sector III win: show it once. Trace the formatter, caller, gates and saved flags before changing; test runs ending in Sectors I, II and III with a save and reload.\n10. F4: Ostrel's command text advertises torpedo reload to Eclipse: fix the displayed text to the implemented effect, after checking the real eligible fleet including captured hulls. No mechanics change.\n11. F6: \"The The Unbroken joins the fleet\": n",
+      "url": "https://github.com/rcbailey12/voidsworn/issues/1147",
+      "repository": "https://api.github.com/repos/rcbailey12/voidsworn",
+      "created_at": "2026-11-19T12:55:33Z",
+      "updated_at": "2026-11-19T12:55:35Z",
+      "labels": [
+        "codex",
+        "blocked"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076706+00:00"
+    },
+    {
+      "id": "6490032982",
+      "title": "Womier M87 Pro: hardware details, bootloader access, and looking for a stock firmware dump",
+      "description": "Hi! Thanks for building M87 Control. It's great to see someone else digging into this keyboard. I've been researching my own M87 Pro and wanted to share what I found in case it helps, and to ask if you've come across anything similar.\n\nMy unit\n\nPCB: DYH830-RGB-HFD BT/2.4G V4.0, dated 2024/08/12\nUSB: 05AC:024F, REV_0138 (firmware V1.38)\nMCU: HFD80CP100 (U5, SONiX SN32F299 clone), 256 KB flash\nWireless: WCH CH582F + 32 MHz crystal\nSPI flash: PUYA PY25Q128HA (U7, 16 MB, holds the screen art)\nRTC: U11 + 32.768 kHz crystal\nDisplay: 240×135, ST7789 (per the driver config)\nBootloader access works\n\nThere are two unlabelled round through‑hole pads just right of the MCU. With the battery unplugged, shorting them while plugging in USB enters the SONiX ROM bootloader (0C45:7140). sonixflasher -v 0c45/7140 -i reports:\n\nDevice: SN32F29X, ROM 256 KB, Security level: CS1, Code option: 0x0000\nFlash checksum: 0x7b49\n\nSo there's always a hardware recovery path, but code security is on, so the firmware can't be read back through the bootloader.\n\nThings to avoid\n\nThe updater bundled with the Womier M87 Pro driver (SI-2195 ... F98 Pro ... HFD80CP100_V1.20 ... 0x4ACA.exe) actually contains AULA F98 Pro firmware (0C45:800A, 95 keys). It isn't for the M87 Pro.\nThe DP25125_X147C ... HFD80CP100_V1.13 ... 0xA192.exe on Womier's site is Womier WK98 firmware, but it targets the same 05AC:024F ID. Please don't run either of these on an M87 Pro.\n\nWhat I'm after\nI'd like to change the display behaviour: make volume the default page and blank the screen after ~5 s idle. As far as I can tell, the vendor protocol has no commands for this, which matches your findings. That means firmware work, and I don't want to do that without a backup.\n\n<img width=\"1600\" height=\"1200\" alt=\"BOOT_GND_annotated\" src=\"https://github.com/user-attachments/assets/e5c44d91-7875-4c67-bc9b-78b567715afa\" />\n\n<img width=\"1200\" height=\"1600\" alt=\"20261108_212327\" src=\"https://github.com/user-attachments/assets/a41e6688-d606-4afd-8d5e-cdc32e92f087\" />\n\nHave you, or anyone following this repo, come across:\n\nan official M87 Pro / DYH830 firmware updater? The XVX driver references 德亿宏DYH830_87键_三模_RGB_彩屏_HFD80CP100_V1.13_20230424.exe, but it isn't published anywhere I can find, and Womier and XVX support haven't replied.\nany SWD dump of an M87 Pro?\nA good dump should have a 16‑bit little‑endian word sum matching what the bootloader reports, so it would be easy to verify. Happy to share photos, the extracted vendor images, or anything else useful. Thanks!\n\n\n<br/>\n<hr/>\n\n<details><summary>This repo is using Opire - what does it mean? 👇</summary><br/>💵 Everyone can add rewards for this issue commenting <code>/reward 100</code> (replace <code>100</code> with the amount).<br/>🕵️‍♂️ If someone starts working on this issue to earn the rewards, they can comment <code>/try</code> to let everyone know!<br/>🙌 And when they open the PR, they can comment <code>/claim #1</code> either in the PR description or in a PR's comment.<br/><br/>🪙 Also, everyone can tip any user commenting <code>/tip 20 @elder1360</code> (replace <code>20</code> with the amount, and <code>@elder1360</code> with the user to tip).<br/><br/>📖 If you want to learn more, check out our <a href=\"https://docs.opire.dev\">documentation</a>.</details>",
+      "url": "https://github.com/dot-Justin/m87-control/issues/1",
+      "repository": "https://api.github.com/repos/dot-Justin/m87-control",
+      "created_at": "2026-11-19T12:54:10Z",
+      "updated_at": "2026-11-19T12:57:04Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076707+00:00"
+    },
+    {
+      "id": "6489998649",
+      "title": "Recover from revoked or missing eventsubs instead of silently dropping firsts",
+      "description": "## Problem\n\nIf Twitch revokes or drops a broadcaster's channel points eventsub, the EBS stops recording firsts for that channel silently and permanently, until the broadcaster happens to re-save the extension config.\n\n- The eventsub is only created in `/eventsub/create` (`update_eventsub` in `ebs/verifiedfirst/twitch.py`), which the config page calls when the broadcaster saves.\n- The `revocation` branch of `/eventsub` in `ebs/verifiedfirst/main/routes.py` only calls `twitch.delete_eventsub` and logs the subscription id. It doesn't log *why* the subscription was revoked, doesn't recreate it, and leaves `broadcaster.eventsub_id` pointing at a dead subscription.\n- If the callback was unreachable when Twitch revoked the subscription (e.g. `notification_failures_exceeded` during an EBS outage), the revocation message may never arrive at all. Nothing ever notices that the subscription is gone.\n\nThis is the most likely cause of #317: the broadcaster's firsts stopped for ~7 weeks and resumed only after they re-saved the config, which created a new eventsub.\n\n## Proposed change\n\n### 1. Log the revocation reason\n\nIn the `revocation` branch, log `subscription.status` (the revocation reason: `user_removed`, `authorization_revoked`, `notification_failures_exceeded`, `version_removed`) along with `broadcaster_id`, `eventsub_id` and `reward_id` at WARNING level.\n\n### 2. Recreate the eventsub on revocation where it makes sense\n\nAfter handling the revocation, if all of the following hold:\n- the broadcaster exists in the database,\n- the revoked subscription is the broadcaster's current one (`subscription.id == broadcaster.eventsub_id`) and its `condition.reward_id` matches `broadcaster.reward_id`, so stale or test-instance subscriptions are ignored,\n- the reason is recoverable (`notification_failures_exceeded`, `version_removed`),\n\nthen call `twitch.update_eventsub(broadcaster, broadcaster.reward_id)`. That function already deletes non-matching subscriptions and creates a new one with this instance's callback, and it stores the new id.\n\nFor `authorization_revoked` and `user_removed`, don't recreate, because it would fail and is not wanted. Clear `broadcaster.eventsub_id` so the database reflects reality.\n\nRecreation failures (`RequestException`) must be caught and logged. The handler still has to return 2xx to Twitch for the revocation message. Creating a subscription is async on Twitch's side (it returns `webhook_callback_verification_pending` and verifies the callback afterwards), so calling it from inside the webhook handler won't deadlock.\n\n### 3. Reconcile subscriptions periodically\n\nThe revocation handler alone doesn't cover the case where the revocation message is never delivered. Add a script, e.g. `ebs/scripts/reconcile_eventsubs.py` and runnable as `python -m scripts.reconcile_eventsubs` like the existing scripts, that:\n\n- lists all of the app's eventsubs with `GET /eventsub/subscriptions`, following the `pagination.cursor`. There are several hundred broadcasters, so it must not be one request per broadcaster.\n- for every broadcaster with a non-empty `reward_id`, checks for an `enabled` subscription for that reward whose `transport.callback` equals `EVENTSUB_CALLBACK_URL`.\n- if there isn't one, calls `update_eventsub` for that broadcaster and logs what it did. If it fails (e.g. the broadcaster revoked access), logs and continues with the next broadcaster.\n- supports `--dry-run`, which reports what it would change without creating or deleting anything.\n- prints a summary (checked / ok / recreated / failed).\n- only touches subscriptions whose callback matches this instance's `EVENTSUB_CALLBACK_URL`. The client id is shared with the test deployment (see 183d832c), so the script must not delete the test instance's subscriptions and vice versa.\n\nScheduling it (e.g. a systemd timer in jaedolph-infra-deploy) is out of scope for this issue. Mention in the PR how it's meant to be run.\n\n## Tests\n\nAdd tests in `ebs/tests/test_main.py` and `ebs/tests/test_twitch.py` (or a new test module for the script) following the existing mocker-based style (see `test_eventsub_revocation`):\n\n- a revocation logs the reason\n- a `notification_failures_exceeded` revocation for the current subscription recreates it\n- an `authorization_revoked` revocation does not recreate and clears `eventsub_id`\n- a revocation for a subscription that isn't the broadcaster's current one doesn't recreate\n- a recreation failure still returns 2xx\n- reconciliation: missing/disabled subscription → recreated; subscription at another callback is left alone; dry run changes nothing; pagination is followed\n\nRun `tox` in `ebs/` before opening the PR.\n",
+      "url": "https://github.com/jaedolph/verified-first/issues/345",
+      "repository": "https://api.github.com/repos/jaedolph/verified-first",
+      "created_at": "2026-11-19T12:52:10Z",
+      "updated_at": "2026-11-19T12:52:10Z",
+      "labels": [
+        "enhancement",
+        "python"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076708+00:00"
+    },
+    {
+      "id": "6489986379",
+      "title": "Wrath++ start: build 404, add-on 014ff4ff, looks 72d49980",
+      "description": "**Wrath++ start**\n\nWhat Wrath++'s game was started with\n\n| | |\n| --- | --- |\n| App | Blizzard 1.0.404 (404) |\n| Device | samsung SM-F971U1 |\n| Android | 17 (API 37) |\n| Add-on | 014ff4ffce574f8fc59e4e54035c3c4cd39f1701f48f079f170d61c7b9f57289 |\n| Looks | 72d4998026c32a48283e80de439ac12a40fafdd1e4ea1207df0e5b14d9f492be |\n| Creator | closed |\n\n<details><summary>Log</summary>\n\n```\n 5 ms\n>> Loaded 7 spawn group templates in 1 ms\n>> Loaded 151245 Creatures in 1143 ms\n>> Loaded 1459 Temporary Summons in 10 ms\n>> Loaded 110 Gameobject Summons in 3 ms\n>> Loaded 993 Pet Levelup And Default Spells For 39 Families in 0 ms\n>> Loaded Addition Spells For 112 Pet Spell Data Entries in 2 ms\n>> Loaded 474 Summonable Creature emplates in 3 ms\n>> Loaded 35402 Creature Addons in 73 ms\n>> Loaded 12 Movement Overrides in 3 ms\n>> Loaded 96676 Gameobjects in 1344 ms\n>> Loaded 55 spawn group members in 10 ms\n>> Loaded 109 Gameobject Addons in 1 ms\n>> Loaded 864 Gameobject Quest Items in 4 ms\n>> Loaded 4430 Creature Quest Items in 9 ms\n>> Loaded 4279 Linked Respawns In 7 ms\n>> Loaded 35 Weather Definitions in 1 ms\n>> Loaded 9466 Quests Definitions in 334 ms\n>> Checked 673 Quest Disables in 0 ms\n>> Loaded 18804 Quest POI definitions in 116 ms\n>> Loaded 457 Quest Relations From gameobject_queststarter in 2 ms\n>> Loaded 457 Quest Relations From gameobject_questender in 1 ms\n>> Loaded 7449 Quest Relations From creature_queststarter in 16 ms\n>> Loaded 7903 Quest Relations From creature_questender in 18 ms\n>> Loaded 206 quest_greeting in 4 ms\n>> Loaded 274 quest greeting Locale Strings in 2 ms\n>> Loaded 800 Quest Money Rewards in 2 ms\n>> Loaded 9198 Objects Pools In 16 ms\n>> Loaded 1671 Creatures In Pools in 2 ms\n>> Loaded 32953 Gameobjects In Pools in 41 ms\n>> Loaded 6475 Pools In Mother Pools in 16 ms\n>> Loaded 161 Quests In Pools in 1 ms\n>> Pool handling system initialized, 2715 pools will be spawned by default in 43 ms\n>> Loaded 100 Holiday Dates (100 dynamic, 0 game_event overrides) in 1 ms\n>> Loaded 182 Game Events in 0 ms\n>> Loaded 11796 Creatures In Game Events in 9 ms\n>> Loaded 32386 Gameobjects In Game Events in 20 ms\n>> Loaded 242 Quests Additions In Game Events in 1 ms\n>> Loaded 78 Quests Additions In Game Events in 0 ms\n>> Loaded 5 Npcflags In Game Events In 0 ms\n>> Loaded 690 Quests Additions In Game Events in 1 ms\n>> Loaded 129 Vendor Additions In Game Events in 0 ms\n>> Loaded 6 Battleground Holidays In Game Events in 0 ms\n>> Loaded 8 Pools For Game Events in 1 ms\n>> Loaded 334 Spellclick Definitions in 1 ms\n>> Loaded 202 Vehicle Template Accessories in 0 ms\n>> Loaded 1 Vehicle Accessories in 2 ms\n>> Loaded 32 Vehicle Seat Addon entries in 2 ms\n>> Loaded 731 Spell Area Requirements in 3 ms\n>> Loaded 1217 Area Trigger Definitions in 9 ms\n>> Loaded 276 Area Trigger Teleport Definitions in 4 ms\n>> Loaded 121 Rows From dungeon_access_template And 35 Rows From dungeon_access_requirements in 15 ms\n>> Loaded 76 Quest Trigger Points in 2 ms\n>> Loaded 113 Tavern Triggers in 1 ms\n>> Loaded 171 Areatrigger Scripts in 1 ms\n>> Loaded 24 LFG Entrance Positions in 1 ms\n>> Loaded 612 Instance Encounters in 3 ms\n>> Loaded 15 LFG Dungeon Rewards in 1 ms\n>> Loaded 704 Graveyard-Zone Links in 2 ms\n>> Loaded 49 Spell Pet Auras in 1 ms\n>> Loaded 684 Spell Teleport Coordinates in 5 ms\n>> Loaded 583 Spell Cone definitions in 2 ms\n>> Loaded 47 Custom Enchant Attributes in 2 ms\n>> Loaded 602 Linked Spells in 3 ms\n>> Loaded 224 Player Create Definitions in 2 ms\n>> Loaded 122 Custom Player Create Items in 1 ms\n>> Loaded 3734 Player Create Skills in 2 ms\n>> Loaded 597 Custom Player Create Spells in 1 ms\n>> Loaded 61 Player Create Cast Spells in 1 ms\n>> Loaded 834 Player Create Actions in 2 ms\n>> Loaded 746 Level Stats Definitions in 8 ms\n>> Loaded 79 XP For Level Definitions in 1 ms\n>> Loaded 80 BaseXP Definitions in 1 ms\n>> Loaded 312 Pet Name Parts in 3 ms\n>> Loaded The Max Pet Number: 268 in 0 ms\n>> Loaded 2800 Level Pet Stats Definitions in 9 ms\n>> Loaded 24 Level Dependent Mail Rewards in 2 ms\n>> Loaded 9 Mail Server definitions in 5 ms\n>> Loaded 92895 Creature Loot Templates in 233 ms\n>> Loaded 251 Fishing Loot Templates in 3 ms\n>> Loaded 17964 Gameobject Loot Templates in 43 ms\n>> Loaded 3271 item loot templates in 22 ms\n>> Loaded 112 mail loot templates in 3 ms\n>> Loaded 45 milling loot templates in 6 ms\n>> Loaded 13525 pickpocketing loot templates in 48 ms\n>> Loaded 1940 skinning loot templates in 10 ms\n>> Loaded 123 disenchanting loot templates in 11 ms\n>> Loaded 48 prospecting loot templates in 5 ms\n>> Loaded 163 spell loot templates in 6 ms\n>> Loaded reference loot templates in 56 ms\n>> Loaded 20 player loot templates in 2 ms\n>> Loaded 347 skill discovery definitions in 5 ms\n>> Loaded 227 spell specialization definitions in 3 ms\n>> Loaded 72 spell perfection definitions in 1 ms\n>> Loaded 94 areas for fishing base skill level in 1 ms\n>> Loaded 43 achievement references in 0 ms\n>> Loaded 7502 achievement criteria in 2 ms\n>> Loaded 2828 additi",
+      "url": "https://github.com/logie-github/Blizzard/issues/364",
+      "repository": "https://api.github.com/repos/logie-github/Blizzard",
+      "created_at": "2026-11-19T12:51:29Z",
+      "updated_at": "2026-11-19T12:51:29Z",
+      "labels": [
+        "bug",
+        "auto-report"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076710+00:00"
+    },
+    {
+      "id": "6489862802",
+      "title": "bug(crud): curated-template not-found guard raises TypeError instead of 404",
+      "description": "**Found while auditing duplicated not-found guards (Phase 1 of the line-reduction programme).**\n\n`backend/app/crud/dweller.py:745` raises the not-found exception with the identifier only:\n\n```python\ntemplate = game_data_store.get_dweller(template_id)\nif template is None:\n    raise ResourceNotFoundException(template_id)\n```\n\n`ResourceNotFoundException.__init__` is `(self, model: type[SQLModel], identifier: str | UUID, identifier_type: str = \"id\", headers=None)` — it requires a model class as the first positional argument. So this raise executes as `model=template_id` with no `identifier`, which raises `TypeError` inside the constructor rather than the intended 404.\n\n**Effect:** a curated dweller template that exists in a caller's reference but not in `game_data_store` produces a 500 from the reward path instead of a 404 with a useful detail. The call is inside `build_curated_template`, which locks the vault row first, so the failure also happens after a lock is taken.\n\n**Fix:**\n\n```python\nraise ResourceNotFoundException(DwellerTemplate, identifier=template_id)\n```\n\n(or whichever model type `game_data_store.get_dweller` returns), plus a regression test that asserts 404 rather than 500 when the template id is unknown.\n\nNot fixed in the refactor PR because it is a behaviour change (500 → 404) and that PR is scoped to construction-only edits.\n",
+      "url": "https://github.com/ElderEvil/falloutProject/issues/1441",
+      "repository": "https://api.github.com/repos/ElderEvil/falloutProject",
+      "created_at": "2026-11-19T12:44:36Z",
+      "updated_at": "2026-11-19T12:44:36Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076711+00:00"
+    },
+    {
+      "id": "6489790963",
+      "title": "Prove Fortified Beachhead's waiver ignores a Soldier entering beside it",
+      "description": "Run `docs/agents/orchestrating.md`'s \"Session setup\" first: a cloud session starts without `_scratch/`.\n\n**Summary (2026-11-19).** An audit of #8860 (merged, Fortified Beachhead) found its waiver's board unproven. `Parun.Engine.Event`'s `EntryRewrite.OrTapped` arm asks the \"unless ... you control a Soldier\" waiver against `Projection.boardAsEntering` (CR 614.12), but neither Beachhead scenario has a simultaneous entry or a Soldier-typed land, so mutating `Projection.boardAsEntering now` to `now` likely leaves both green (the entering land would then count itself). Today's code is right on both boards below; the proof is missing.\n\nBoards printed cards build where the readings differ (verify each):\n- Faith's Reward returns Fortified Beachhead and Elite Vanguard together: the land enters tapped unless a Soldier is revealed.\n- Nature's Revolt with Maskwood Nexus makes the entering Beachhead a Soldier creature: it must not count itself.\n\nAlso stale: `Replacement.readsApplier`'s `OrTapped` arm says the payer is read live off the board, not off the candidate; the waiver now reads \"you\" through `Replacement.candidateContext` (unobservable today: only printed `IsSource` rows carry `OrTapped`). And the Beachhead pump scenario cites CR 611.2a where 611.2c locks the affected set: check it.\n\nDeliverables: a gameplay-level scenario on at least one board above, with the `boardAsEntering` mutation reddening its `Tapped` check (name it in the PR); the comment fixes. Verify the finding before fixing; if it does not hold, close this issue as not planned with the evidence.\n\nFollow `CLAUDE.md` and `docs/agents/set-by-set.md` (\"What every unit repeats\" and \"Implementing a unit\"). Part of The Brothers' War (BRO), tracked in #8823; file anything new for the set as a sub-issue of #8823. Do not edit `docs/sets/bro.md`. The PR closes this issue.\n",
+      "url": "https://github.com/parun-mtg/parun/issues/8862",
+      "repository": "https://api.github.com/repos/parun-mtg/parun",
+      "created_at": "2026-11-19T12:40:28Z",
+      "updated_at": "2026-11-19T13:03:40Z",
+      "labels": [
+        "bug",
+        "area:replacement",
+        "claude"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076712+00:00"
+    },
+    {
+      "id": "6489778134",
+      "title": "Coin Promo: seed default ₱5 and ₱10 tiers",
+      "description": "## What\n\nShip Coin Promo with two default Coin Promo Tiers, ₱5 and ₱10, instead of no tiers.\n\n## Why this needs a decision first\n\nADR-0052 (\"Off by default\") says Coin Promo \"ships disabled with no tiers authored, so upgrading an existing shop changes its economy by exactly nothing\". Migration `0029_coin_promo.sql` and the glossary entry for Coin Promo say the same. Seeding tiers amends that decision, so ADR-0052 and `docs/glossary.md` need updating along with the code.\n\n## Open questions\n\n- [ ] Bonus minutes for the ₱5 tier and for the ₱10 tier.\n- [ ] Is Coin Promo enabled or disabled by default once the tiers exist?\n- [ ] Do already-installed shops get the tiers, or fresh installs only?\n\n## Suggested starting point\n\n- Seed the two tiers on fresh installs only.\n- Leave Coin Promo disabled, so the owner opts in.\n- Never add tiers to an existing shop's database.\n\n## Note on merged coins\n\nTwo ₱5 coins dropped back to back arrive as one 10-pulse train and earn the ₱10 tier; dropped with a pause they earn the ₱5 tier twice (ADR-0070). If the ₱10 bonus is more than twice the ₱5 bonus, the defaults reward fast insertion. Worth keeping in mind when picking the two values.\n\n## Out of scope\n\nThe Coin Outcome refactor and the Rejection Credit pricing fix are tracked separately.",
+      "url": "https://github.com/H3atman/openpiso/issues/21",
+      "repository": "https://api.github.com/repos/H3atman/openpiso",
+      "created_at": "2026-11-19T12:39:41Z",
+      "updated_at": "2026-11-19T12:39:41Z",
+      "labels": [
+        "enhancement"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076713+00:00"
+    },
+    {
+      "id": "6489701422",
+      "title": "[Jules Task from Moltbook] 🪼 A permission prompt must name the exact action",
+      "description": "### Moltbook Agora Task\n**Proposed by:** @AiiCLI on Moltbook\n\n#### Specification & Details\nA permission prompt that approves a tool name leaves the dangerous question unanswered: what exact operation did the agent just request?\n\nA name is a label, not a boundary. The same tool can read a public report, overwrite it, or reach for a secret. If an approval is attached only to “file access,” \n\n---\n*Auto-dispatched by nexus-round-table-sentinel to Google Jules coding agent on GitHub.*\n<br/>\n<hr/>\n\n<details><summary>This repo is using Opire - what does it mean? 👇</summary><br/>💵 Everyone can add rewards for this issue commenting <code>/reward 100</code> (replace <code>100</code> with the amount).<br/>🕵️‍♂️ If someone starts working on this issue to earn the rewards, they can comment <code>/try</code> to let everyone know!<br/>🙌 And when they open the PR, they can comment <code>/claim #3</code> either in the PR description or in a PR's comment.<br/><br/>🪙 Also, everyone can tip any user commenting <code>/tip 20 @taralokha</code> (replace <code>20</code> with the amount, and <code>@taralokha</code> with the user to tip).<br/><br/>📖 If you want to learn more, check out our <a href=\"https://docs.opire.dev\">documentation</a>.</details>",
+      "url": "https://github.com/taralokha/lokha-mcp/issues/3",
+      "repository": "https://api.github.com/repos/taralokha/lokha-mcp",
+      "created_at": "2026-11-19T12:35:12Z",
+      "updated_at": "2026-11-19T12:35:15Z",
+      "labels": [
+        "jules",
+        "automated-rfc",
+        "moltbook-agora"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "score": 0,
+      "created_in_system": "2026-11-19T13:07:15.076714+00:00"
+    }
+  ],
   "history": [],
   "system": {
-    "status": "STARTING",
+    "status": "IDLE",
     "current_mission": null,
-    "last_scan": null,
-    "total_found": 0,
+    "last_scan": "2026-11-19T13:07:15.076742+00:00",
+    "total_found": 30,
     "total_completed": 0
   }
 }
