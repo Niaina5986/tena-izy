@@ -1,0 +1,51 @@
+name: BOT WORKER - Autonomous Engine
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bot-worker
+  cancel-in-progress: false
+
+jobs:
+  bot-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Télécharger le dépôt
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Vérifier les fichiers
+        run: |
+          test -f main.py
+          test -f db.json
+
+      - name: Lancer BOT WORKER
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-3.6-flash
+        run: |
+          python main.py
+
+      - name: Enregistrer les résultats
+        run: |
+          git config user.name "BOT WORKER"
+          git config user.email "bot-worker@users.noreply.github.com"
+          git add db.json
+          git diff --cached --quiet || git commit -m "BOT WORKER: update missions"
+          git push
