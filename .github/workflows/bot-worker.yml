@@ -29,6 +29,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Vérifier les fichiers
+        run: |
+          test -f main.py
+          test -f db.json
+
       - name: Lancer BOT WORKER
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -41,6 +46,6 @@ jobs:
         run: |
           git config user.name "BOT WORKER"
           git config user.email "bot-worker@users.noreply.github.com"
-          git add bot_worker/db.json
+          git add db.json
           git diff --cached --quiet || git commit -m "BOT WORKER: update missions"
           git push
