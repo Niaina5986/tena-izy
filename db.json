@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-20T15:18:15.885927+00:00",
+  "updated_at": "2026-11-20T16:18:21.216526+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -127,7 +127,7 @@
         "bug"
       ],
       "source": "GitHub",
-      "status": "IN_PROGRESS",
+      "status": "WAITING_HUMAN",
       "created_in_system": "2026-11-20T06:34:25.762903+00:00",
       "analysis": {
         "id": "6505828301",
@@ -144,12 +144,12 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "selected_at": "2026-11-20T06:37:01.739146+00:00",
       "execution": {
-        "status": "RUNNING",
+        "status": "READY_FOR_REVIEW",
         "executor": "MANUS",
         "task_id": "nmaQsmbhoDGuWtPGLHjQPY",
         "task_url": "https://manus.im/app/nmaQsmbhoDGuWtPGLHjQPY",
         "started_at": "2026-11-20T12:55:01.624947+00:00",
-        "result": null,
+        "result": "## Rapport final — R8\n\n- **artifact_url :** indisponible — le correctif n’a pas été publié sur GitHub.\n- **commit_sha :** `e99a50f2d10ab49fce3e2da0ea05b161bafe7895` — commit local sur `fix/ltlcfg-multiline-strings`.\n- **test_command :** `/tmp/lateralus-test-venv/bin/python -m pytest -q tests/test_ltlcfg.py tests/test_parser.py`\n- **exact_test_results :** `33 passed in 0.06s` — Python 3.12.3, Linux, pytest 9.2.0. La reproduction après correction renvoie `{'banner': 'first\\nsecond', 'port': 8080}`. `git show --check` ne signale pas d’erreur et l’arbre de travail est propre.\n- **files_changed :** [parseur `.ltlcfg`]( /home/ubuntu/lateralus-lang/lateralus_lang/ltlcfg.py) et [tests de régression]( /home/ubuntu/lateralus-lang/tests/test_ltlcfg.py).\n- **blockers :** le connecteur GitHub n’est pas activé dans cette session ; le push et la création d’un lien de commit publié n’étaient donc pas disponibles. Aucun lien GitHub n’est fourni, afin de ne pas présenter le commit local comme publié.\n- **human_actions :** activer le connecteur GitHub pour permettre la publication de la branche et l’obtention d’un lien vérifiable.\n- **final_status :** **BLOCKED**\n\nLe correctif active `DOTALL` pour une chaîne multiligne fermée, traite séparément le suffixe et son éventuel commentaire, et ajoute des tests couvrant le contenu contenant `#`, le commentaire après fermeture, les champs suivants, les chaînes sur une ligne et les chaînes non terminées. La branche et le commit existent uniquement dans le dépôt local `/home/ubuntu/lateralus-lang`.\n\nLe correctif est commité localement sous `e99a50f2…`, et l’arbre de travail est propre. Je fais une dernière vérification post-commit ; je ne pousserai pas vers GitHub, car l’outil a confirmé que le connecteur GitHub n’est pas activé et les accès bruts ne sont pas autorisés dans cette session.\n\nLes vérifications ciblées passent : la reproduction produit exactement `{'banner': 'first\\\\nsecond', 'port': 8080}`, et `tests/test_ltlcfg.py` avec `tests/test_parser.py` donne **33 tests réussis** sous Python 3.12.3/Linux. Je vérifie maintenant les métadonnées Git et l’absence de fichiers parasites avant de créer le commit local autorisé ; la publication distante reste conditionnée à l’activation du connecteur GitHub.\n\nLe correctif et les nouveaux tests sont en place sur la branche `fix/ltlcfg-multiline-strings`. Je lance maintenant la reproduction, les tests ciblés ainsi que les contrôles syntaxiques et de diff ; pytest n’est pas présent dans l’environnement, donc je l’installerai uniquement dans un environnement virtuel temporaire si nécessaire.\n\nLe défaut est confirmé : la reproduction renvoie uniquement `{'port': 8080}`. Je vais créer une branche locale à partir de `main`, ajouter une gestion DOTALL uniquement pour les chaînes multilignes terminées, séparer le commentaire final, et couvrir le contenu contenant `#`, les commentaires après fermeture, les champs suivants, les chaînes sur une ligne et les chaînes non terminées.\n\nLa révision actuelle reproduit le problème : le parseur n’expose pas `banner` dans la section, et aucun test dédié à `ltlcfg` n’existe. L’intégration GitHub authentifiée n’est pas activée ici ; je peux néanmoins préparer et valider un correctif local sur une branche dédiée, mais la publication éventuelle nécessitera l’accès GitHub approprié.\n\nLe dépôt distant est maintenant cloné et propre, sur `main` au commit `ed5b9ea…`, distinct du commit historique cité dans le rapport. Je vérifie si le défaut existe encore dans cette révision, ainsi que les tests et la configuration du projet, avant de créer une branche corrective.\n\nConfirmez-vous à nouveau que je dois poursuivre l’analyse et la correction du dépôt public Lateralus, exécuter les tests, et, si possible, créer une branche et un commit sans fusion ni soumission externe ?\n\nUne nouvelle alerte de sécurité s’est déclenchée pendant la vérification des consignes Git. Je suspends donc l’exécution et demande une nouvelle confirmation avant de reprendre les opérations sur le dépôt.\n\nConfirmation reçue. Je reprends dans les limites convenues : dépôt public, modifications sur une branche dédiée, tests réellement exécutés, sans soumission ni fusion. Le workspace ne contient aucun clone du dépôt, donc je vais repartir du dépôt distant et vérifier son état avant le patch.\n\nConfirmez-vous que je peux poursuivre la mission en recherchant ou clonant le dépôt public Lateralus, en reproduisant le défaut, en apportant une correction et en exécutant les tests, puis en créant éventuellement une branche et un commit non fusionné si les accès GitHub disponibles le permettent ? Je ne soumettrai rien à une plateforme, ne fusionnerai aucune PR et n’engagerai aucun paiement.\n\nUne instruction de sécurité a interrompu l’exécution après la vérification du workspace. Avant toute autre action, je dois confirmer que vous souhaitez que je poursuive l’examen du dépôt et la réparation locale décrite dans la mission.\n\nLa pièce jointe indique que l’ancien compte rendu pourrait ne pas correspondre à l’état actuel du workspace. Je vérifie d’abord l’existence et l’historique réel du dépôt avant de modifier quoi que ce soit.\n\nJe vais examiner la reproduction et le dépôt, corriger le parseur de façon ciblée, puis exécuter les tests pertinents et consigner les preuves vérifiables.",
         "submitted": false,
         "last_monitor_error_at": "2026-11-20T07:51:36.479375+00:00",
         "notifications_sent": [
@@ -157,9 +157,9 @@
           "READY_FOR_REVIEW"
         ],
         "last_notification_at": "2026-11-20T07:54:39.266013+00:00",
-        "last_checked_at": "2026-11-20T07:54:38.413514+00:00",
+        "last_checked_at": "2026-11-20T16:18:20.091098+00:00",
         "last_api_status": "stopped",
-        "finished_at": "2026-11-20T07:54:38.661032+00:00",
+        "finished_at": "2026-11-20T16:18:20.216344+00:00",
         "r8_history": [
           {
             "previous_task_id": "5uVqE2sHVAFNoCFAyZGWQ6",
