@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-20T06:37:01.739194+00:00",
+  "updated_at": "2026-11-20T06:39:08.337905+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -149,6 +149,10 @@
         "task_id": null,
         "result": null,
         "submitted": false
+      },
+      "telegram": {
+        "message_id": 3,
+        "sent_at": "2026-11-20T06:39:08.337875+00:00"
       }
     },
     {
