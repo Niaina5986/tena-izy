@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-20T07:54:40.266213+00:00",
+  "updated_at": "2026-11-20T12:55:01.625323+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -127,7 +127,7 @@
         "bug"
       ],
       "source": "GitHub",
-      "status": "WAITING_HUMAN",
+      "status": "IN_PROGRESS",
       "created_in_system": "2026-11-20T06:34:25.762903+00:00",
       "analysis": {
         "id": "6505828301",
@@ -144,14 +144,13 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "selected_at": "2026-11-20T06:37:01.739146+00:00",
       "execution": {
-        "status": "READY_FOR_REVIEW",
+        "status": "RUNNING",
         "executor": "MANUS",
-        "task_id": "5uVqE2sHVAFNoCFAyZGWQ6",
-        "task_url": "https://manus.im/app/5uVqE2sHVAFNoCFAyZGWQ6",
-        "started_at": "2026-11-20T07:46:30.401096+00:00",
-        "result": "## Résumé\n\nJ’ai reproduit le défaut dans le dépôt au commit signalé `4cb9147`. Le collecteur joignait bien les lignes, mais l’expression régulière d’affectation ne pouvait pas traverser les retours à la ligne.\n\nLa correction active `re.DOTALL` uniquement après avoir trouvé le guillemet fermant, et traite séparément le texte qui le suit pour conserver les commentaires de fin sans les inclure dans la valeur. J’ai également ajouté des tests de régression.\n\n## Fichiers modifiés\n\n- [Parseur `.ltlcfg`]( /home/ubuntu/lateralus-lang/lateralus_lang/ltlcfg.py)\n- [Tests du parseur `.ltlcfg`]( /home/ubuntu/lateralus-lang/tests/test_ltlcfg.py)\n\n## Vérifications\n\n- Reproduction initiale : échouait, le champ `banner` était absent.\n- Reproduction après correction : produit `{'banner': 'first\\nsecond', 'port': 8080}`.\n- `python3 -m pytest -q tests/test_ltlcfg.py tests/test_parser.py` : **33 tests réussis**.\n- `git diff --check` et compilation Python : réussis.\n\nLes tests ont été exécutés sous Python 3.12.3/Linux, et non sur Windows avec Python 3.12.15 comme dans le rapport. `pytest` était absent initialement ; je l’ai installé dans l’environnement sandbox uniquement.\n\n## Actions externes et état\n\nAucun travail n’a été soumis à une plateforme ; aucune fusion ni aucun commit n’a été effectué. **Aucune intervention humaine n’est nécessaire pour examiner ces modifications.**\n\n**État final : READY_FOR_REVIEW**\n\nLa reproduction passe désormais et `git diff --check` ne signale pas d’erreur. Les tests automatisés n’ont pas démarré car `pytest` n’est pas installé dans cet environnement ; je vérifie s’il est possible d’ajouter uniquement cette dépendance de test pour achever la validation.\n\nLa correction est appliquée et les cas de régression sont ajoutés dans le dépôt local. Je lance maintenant le test dédié et celui du parseur existant, puis je vérifierai la reproduction exacte et l’état des modifications sans créer de commit.\n\nJ’ai confirmé que le clone est exactement au commit signalé (4cb9147) et que le défaut se trouve bien dans le collecteur multiline : l’expression d’affectation ne traverse pas les sauts de ligne. Je reproduis d’abord le bug et vérifie les conventions de tests, notamment le traitement des commentaires et des chaînes non multilignes.\n\nLe rapport contient déjà la reproduction, l’hypothèse de correction et des tests de régression proposés. Je vérifie maintenant s’il existe un checkout local, puis j’inspecterai la version concernée avant d’appliquer une correction minimale et de valider les tests.\n\nJe vais examiner le dépôt et le rapport complet, reproduire le comportement, puis corriger le parseur et lancer les tests pertinents.",
+        "task_id": "nmaQsmbhoDGuWtPGLHjQPY",
+        "task_url": "https://manus.im/app/nmaQsmbhoDGuWtPGLHjQPY",
+        "started_at": "2026-11-20T12:55:01.624947+00:00",
+        "result": null,
         "submitted": false,
-        "monitor_error": "Manus HTTP 405: {\"error\":{\"code\":\"method_not_allowed\",\"message\":\"HTTP method not allowed for /v2/task.detail\"},\"ok\":false,\"request_id\":\"916bd375-ad60-407c-be64-e22c72b63153\"}",
         "last_monitor_error_at": "2026-11-20T07:51:36.479375+00:00",
         "notifications_sent": [
           "MONITOR_ERROR",
@@ -160,7 +159,21 @@
         "last_notification_at": "2026-11-20T07:54:39.266013+00:00",
         "last_checked_at": "2026-11-20T07:54:38.413514+00:00",
         "last_api_status": "stopped",
-        "finished_at": "2026-11-20T07:54:38.661032+00:00"
+        "finished_at": "2026-11-20T07:54:38.661032+00:00",
+        "r8_history": [
+          {
+            "previous_task_id": "5uVqE2sHVAFNoCFAyZGWQ6",
+            "previous_task_url": "https://manus.im/app/5uVqE2sHVAFNoCFAyZGWQ6",
+            "created_at": "2026-11-20T12:55:01.624925+00:00",
+            "review_decision": "BLOCKED_NO_ARTIFACT",
+            "missing_evidence": [
+              "Lien vers le commit ou Pull Request",
+              "Résultats des tests"
+            ]
+          }
+        ],
+        "r8_attempts": 1,
+        "r8_current_task_id": "nmaQsmbhoDGuWtPGLHjQPY"
       },
       "telegram": {
         "message_id": 3,
