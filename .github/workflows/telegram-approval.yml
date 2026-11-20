@@ -1,0 +1,62 @@
+name: BOT WORKER - Telegram Approval
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bot-worker
+  cancel-in-progress: false
+
+jobs:
+  telegram-approval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Télécharger le dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Vérifier les fichiers
+        run: |
+          test -f db.json
+          test -f telegram_approval.py
+          test -f manus_worker.py
+
+      - name: Récupérer les décisions Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python telegram_approval.py
+
+      - name: Exécuter une mission approuvée avec Manus
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+        run: python manus_worker.py
+
+      - name: Sauvegarder les résultats
+        if: always()
+        run: |
+          git config user.name "BOT WORKER"
+          git config user.email "bot-worker@users.noreply.github.com"
+
+          git add db.json
+
+          if ! git diff --cached --quiet; then
+            git commit -m "BOT WORKER: approval and execution update"
+          fi
+
+          git pull --rebase origin main
+          git push origin main
