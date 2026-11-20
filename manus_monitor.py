@@ -3,6 +3,7 @@ import json
 import time
 import urllib.request
 import urllib.error
+from urllib.parse import urlencode
 from datetime import datetime, timezone
 
 
@@ -18,9 +19,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 MANUS_API = "https://api.manus.ai/v2"
-TELEGRAM_API = (
-    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
-)
+TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
 TIMEOUT = 40
 
@@ -77,25 +76,23 @@ def save_db(db):
 
 
 # ============================================================
-# REQUÊTES HTTP
+# REQUÊTES HTTP MANUS
 # ============================================================
 
 def manus_request(endpoint, payload):
     if not MANUS_API_KEY:
         raise RuntimeError("MANUS_API_KEY manquante.")
 
-    url = f"{MANUS_API}/{endpoint}"
-
-    data = json.dumps(payload).encode("utf-8")
+    query = urlencode(payload)
+    url = f"{MANUS_API}/{endpoint}?{query}"
 
     request = urllib.request.Request(
         url,
-        data=data,
         headers={
-            "Content-Type": "application/json",
+            "Accept": "application/json",
             "x-manus-api-key": MANUS_API_KEY
         },
-        method="POST"
+        method="GET"
     )
 
     try:
@@ -121,7 +118,7 @@ def manus_request(endpoint, payload):
         )
 
         raise RuntimeError(
-            f"Manus HTTP {e.code}: {details[:700]}"
+            f"Manus HTTP {e.code}: {details[:1000]}"
         )
 
     except urllib.error.URLError as e:
@@ -142,21 +139,17 @@ def get_task_messages(task_id):
         "task.listMessages",
         {
             "task_id": task_id,
-            "limit": 100
+            "limit": 100,
+            "order": "desc"
         }
     )
 
 
 # ============================================================
-# EXTRACTION DES DONNÉES MANUS
+# EXTRACTION DES DONNÉES
 # ============================================================
 
 def find_value(data, keys):
-    """
-    Recherche une valeur dans une réponse JSON,
-    même si Manus ajoute des niveaux data/result.
-    """
-
     if isinstance(data, dict):
 
         for key in keys:
@@ -181,31 +174,41 @@ def find_value(data, keys):
 
 
 def extract_status(detail):
-    status = find_value(
-        detail,
-        ["status", "agent_status"]
-    )
+    task = detail.get("task", {}) if isinstance(detail, dict) else {}
+
+    status = task.get("status")
 
     if not status:
-        return "UNKNOWN"
+        status = find_value(
+            detail,
+            ["agent_status", "status"]
+        )
+
+    if not status:
+        return "unknown"
 
     return str(status).lower()
 
 
 def extract_background_jobs(detail):
-    value = find_value(
-        detail,
-        ["has_running_background_jobs"]
-    )
+    task = detail.get("task", {}) if isinstance(detail, dict) else {}
+
+    value = task.get("has_running_background_jobs")
+
+    if value is None:
+        value = find_value(
+            detail,
+            ["has_running_background_jobs"]
+        )
 
     return value is True
 
 
 def extract_messages(response):
-    messages = find_value(
-        response,
-        ["messages", "items"]
-    )
+    if not isinstance(response, dict):
+        return []
+
+    messages = response.get("messages", [])
 
     if isinstance(messages, list):
         return messages
@@ -214,12 +217,7 @@ def extract_messages(response):
 
 
 def extract_assistant_result(response):
-    """
-    Récupère les réponses de l'agent Manus.
-    """
-
     messages = extract_messages(response)
-
     results = []
 
     for message in messages:
@@ -227,51 +225,38 @@ def extract_assistant_result(response):
         if not isinstance(message, dict):
             continue
 
-        message_type = str(
-            message.get("type", "")
-        ).lower()
+        # Format réel Manus v2
+        assistant = message.get("assistant_message")
 
-        role = str(
-            message.get("role", "")
-        ).lower()
-
-        if (
-            message_type == "assistant_message"
-            or role == "assistant"
-        ):
-
-            content = message.get("content")
+        if isinstance(assistant, dict):
+            content = assistant.get("content")
 
             if isinstance(content, str):
                 results.append(content)
 
             elif isinstance(content, list):
-
                 for item in content:
+                    if isinstance(item, dict):
+                        if item.get("type") == "text":
+                            text = item.get("text")
 
-                    if not isinstance(item, dict):
-                        continue
+                            if text:
+                                results.append(text)
 
-                    if item.get("type") == "text":
-                        text = item.get("text")
+        # Compatibilité avec les anciens formats
+        elif message.get("type") == "assistant_message":
+            content = message.get("content")
 
-                        if text:
-                            results.append(text)
+            if isinstance(content, str):
+                results.append(content)
 
     return "\n\n".join(results).strip()
 
 
 def extract_waiting_information(detail, messages):
-    """
-    Recherche la raison pour laquelle Manus attend.
-    """
-
-    description = find_value(
+    waiting_description = find_value(
         detail,
-        [
-            "waiting_description",
-            "description"
-        ]
+        ["waiting_description"]
     )
 
     event_type = find_value(
@@ -284,11 +269,45 @@ def extract_waiting_information(detail, messages):
         ["waiting_for_event_id"]
     )
 
-    if not description:
-        description = "Manus attend une intervention."
+    # Recherche également dans les événements Manus
+    for message in extract_messages(messages):
+
+        if not isinstance(message, dict):
+            continue
+
+        status_update = message.get("status_update", {})
+
+        if not isinstance(status_update, dict):
+            continue
+
+        status_detail = status_update.get(
+            "status_detail",
+            {}
+        )
+
+        if not isinstance(status_detail, dict):
+            continue
+
+        if not waiting_description:
+            waiting_description = status_detail.get(
+                "waiting_description"
+            )
+
+        if not event_type:
+            event_type = status_detail.get(
+                "waiting_for_event_type"
+            )
+
+        if not event_id:
+            event_id = status_detail.get(
+                "waiting_for_event_id"
+            )
+
+    if not waiting_description:
+        waiting_description = "Manus attend une intervention."
 
     return {
-        "description": str(description),
+        "description": str(waiting_description),
         "event_type": event_type,
         "event_id": event_id
     }
@@ -360,7 +379,6 @@ def notify_once(mission, notification_key, message):
         return
 
     if telegram_send(message):
-
         sent.append(notification_key)
         execution["last_notification_at"] = now()
 
@@ -372,7 +390,6 @@ def notify_once(mission, notification_key, message):
 def process_mission(mission):
 
     execution = mission.get("execution", {})
-
     task_id = execution.get("task_id")
 
     if not task_id:
@@ -393,7 +410,6 @@ def process_mission(mission):
     try:
 
         detail = get_task_detail(task_id)
-
         status = extract_status(detail)
 
         execution["last_checked_at"] = now()
@@ -441,8 +457,7 @@ def process_mission(mission):
                 f"Raison : {waiting['description']}\n\n"
                 f"Task ID : {task_id}\n"
                 f"Manus : {execution.get('task_url', '')}\n\n"
-                "Aucune action sensible ne sera confirmée "
-                "automatiquement."
+                "Une intervention humaine est nécessaire."
             )
 
             notify_once(
@@ -460,9 +475,6 @@ def process_mission(mission):
         # ----------------------------------------------------
 
         if status == "stopped":
-
-            # Un agent peut être arrêté alors que
-            # des tâches secondaires continuent.
 
             if extract_background_jobs(detail):
 
@@ -486,13 +498,13 @@ def process_mission(mission):
             mission["status"] = "WAITING_HUMAN"
 
             db_result = (
-                "MISSION TERMINÉE PAR MANUS\n\n"
+                "✅ MISSION TERMINÉE PAR MANUS\n\n"
                 f"Mission : {title}\n\n"
                 "Résultat disponible pour vérification.\n\n"
                 f"Résumé :\n{result[:3000]}\n\n"
                 f"Manus : {execution.get('task_url', '')}\n\n"
                 "Vérifie le résultat avant de valider "
-                "la mission ou de la soumettre."
+                "ou de soumettre la mission."
             )
 
             notify_once(
@@ -561,9 +573,7 @@ def process_mission(mission):
         execution["monitor_error"] = str(e)
         execution["last_monitor_error_at"] = now()
 
-        # Ne pas remplacer RUNNING par un statut définitif.
-        # La prochaine exécution réessaiera.
-
+        # Ne pas déclarer la mission terminée en cas d'erreur.
         if execution.get("status") != "NEEDS_INPUT":
             execution["status"] = "MONITOR_ERROR"
 
@@ -595,7 +605,6 @@ def run():
         )
 
     db = load_db()
-
     missions = db.get("missions", [])
 
     processed = 0
@@ -618,7 +627,6 @@ def run():
         if changed:
             processed += 1
 
-        # Petite pause pour éviter les requêtes trop rapprochées.
         time.sleep(1)
 
     if processed > 0:
