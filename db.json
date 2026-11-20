@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-20T07:41:01.687427+00:00",
+  "updated_at": "2026-11-20T07:46:30.401119+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -127,7 +127,7 @@
         "bug"
       ],
       "source": "GitHub",
-      "status": "WAITING_APPROVAL",
+      "status": "IN_PROGRESS",
       "created_in_system": "2026-11-20T06:34:25.762903+00:00",
       "analysis": {
         "id": "6505828301",
@@ -144,16 +144,19 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "selected_at": "2026-11-20T06:37:01.739146+00:00",
       "execution": {
-        "status": "NOT_STARTED",
-        "executor": null,
-        "task_id": null,
+        "status": "RUNNING",
+        "executor": "MANUS",
+        "task_id": "5uVqE2sHVAFNoCFAyZGWQ6",
+        "task_url": "https://manus.im/app/5uVqE2sHVAFNoCFAyZGWQ6",
+        "started_at": "2026-11-20T07:46:30.401096+00:00",
         "result": null,
         "submitted": false
       },
       "telegram": {
         "message_id": 3,
         "sent_at": "2026-11-20T06:39:08.337875+00:00"
-      }
+      },
+      "approved_at": "2026-11-20T07:46:27.631130+00:00"
     },
     {
       "id": "6505617306",
@@ -834,12 +837,18 @@
       "analysis_model": "gemini-3.5-flash-lite"
     }
   ],
-  "history": [],
+  "history": [
+    {
+      "mission_id": "6505828301",
+      "action": "APPROVED",
+      "timestamp": "2026-11-20T07:46:27.631150+00:00"
+    }
+  ],
   "telegram": {
-    "last_update_id": 0
+    "last_update_id": 644591856
   },
   "system": {
-    "status": "WAITING_APPROVAL",
+    "status": "IN_PROGRESS",
     "current_mission": "6505828301",
     "last_scan": "2026-11-20T06:37:01.739191+00:00",
     "total_found": 30,
