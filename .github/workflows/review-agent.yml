@@ -1,18 +1,18 @@
-name: Review Agent
+  name: Review Agent
 
-on:
-workflow_dispatch:
+  on:
+  workflow_dispatch:
 
-permissions:
-contents: write
+  permissions:
+  contents: write
 
-concurrency:
-group: review-agent
-cancel-in-progress: false
+  concurrency:
+  group: review-agent
+  cancel-in-progress: false
 
-jobs:
-review:
-runs-on: ubuntu-latest
+  jobs:
+  review:
+  runs-on: ubuntu-latest
 steps:
 - name: Recuperer le depot
 uses: actions/checkout@v4
