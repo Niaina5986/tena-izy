@@ -1,0 +1,16 @@
+{
+  "version": "2.1.0",
+  "updated_at": null,
+  "missions": [],
+  "history": [],
+  "telegram": {
+    "last_update_id": 0
+  },
+  "system": {
+    "status": "IDLE",
+    "current_mission": null,
+    "last_scan": null,
+    "total_found": 0,
+    "total_completed": 0
+  }
+}
