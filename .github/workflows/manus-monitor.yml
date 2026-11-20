@@ -2,7 +2,6 @@ name: MANUS MONITOR - Surveillance automatique
 
 on:
 workflow_dispatch:
-
 schedule:
 - cron: "*/5 * * * *"
 
