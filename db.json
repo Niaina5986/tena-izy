@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-20T07:46:30.401119+00:00",
+  "updated_at": "2026-11-20T07:51:37.763909+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -144,13 +144,19 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "selected_at": "2026-11-20T06:37:01.739146+00:00",
       "execution": {
-        "status": "RUNNING",
+        "status": "MONITOR_ERROR",
         "executor": "MANUS",
         "task_id": "5uVqE2sHVAFNoCFAyZGWQ6",
         "task_url": "https://manus.im/app/5uVqE2sHVAFNoCFAyZGWQ6",
         "started_at": "2026-11-20T07:46:30.401096+00:00",
         "result": null,
-        "submitted": false
+        "submitted": false,
+        "monitor_error": "Manus HTTP 405: {\"error\":{\"code\":\"method_not_allowed\",\"message\":\"HTTP method not allowed for /v2/task.detail\"},\"ok\":false,\"request_id\":\"916bd375-ad60-407c-be64-e22c72b63153\"}",
+        "last_monitor_error_at": "2026-11-20T07:51:36.479375+00:00",
+        "notifications_sent": [
+          "MONITOR_ERROR"
+        ],
+        "last_notification_at": "2026-11-20T07:51:36.763738+00:00"
       },
       "telegram": {
         "message_id": 3,
