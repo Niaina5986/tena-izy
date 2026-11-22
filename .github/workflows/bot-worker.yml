@@ -23,57 +23,39 @@ steps:
     with:
       ref: main
       fetch-depth: 0
-      token: ${{ secrets.GITHUB_TOKEN }}
 
-  - name: Setup Python
+  - name: Set up Python
     uses: actions/setup-python@v5
     with:
       python-version: "3.12"
 
-  - name: Verify required files
+  - name: Install dependencies
     run: |
-      test -f main.py
-      test -f db.json
-      test -f telegram_approval.py
-      test -f manus_worker.py
+      python -m pip install --upgrade pip
+      if [ -f requirements.txt ]; then
+        pip install -r requirements.txt
+      else
+        pip install requests
+      fi
 
-  - name: Search and analyze missions
+  - name: Run autonomous engine
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_MODEL: gemini-3.8-flash
-    run: python main.py
-
-  - name: Automatically approve suitable missions
-    run: python telegram_approval.py
-
-  - name: Execute approved missions with Manus
-    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_PAT: ${{ secrets.GH_PAT }}
       MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-    run: python manus_worker.py
-
-  - name: Save database safely
-    if: always()
     run: |
-      git config user.name "TENA IZY BOT"
+      python main.py
+
+  - name: Save database changes
+    run: |
+      git config user.name "TENA IZY Bot"
       git config user.email "tena-izy-bot@users.noreply.github.com"
-
       git add db.json
-
       if git diff --cached --quiet; then
         echo "No database changes."
         exit 0
       fi
-
-      git commit -m "TENA IZY: autonomous mission update"
-
-      git fetch origin main
-
-      if ! git merge-base --is-ancestor origin/main HEAD; then
-        echo "ERROR: Remote branch changed unexpectedly."
-        exit 1
-      fi
-
+      git commit -m "Update TENA IZY database"
       git push origin HEAD:main
