@@ -1,71 +1,79 @@
-name: BOT WORKER - Autonomous Engine
+name: TENA IZY - Autonomous Engine
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "*/30 * * * *"
+workflow_dispatch:
+schedule:
+- cron: "*/30 * * * *"
 
 permissions:
-  contents: write
+contents: write
 
 concurrency:
-  group: tena-izy-db
-  cancel-in-progress: false
+group: tena-izy-db
+cancel-in-progress: false
 
 jobs:
-  bot-worker:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+bot-worker:
+runs-on: ubuntu-latest
+timeout-minutes: 30
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      ref: main
+      fetch-depth: 0
+      token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.12"
 
-      - name: Verify required files
-        run: |
-          test -f main.py
-          test -f db.json
-          test -f manus_worker.py
+  - name: Verify required files
+    run: |
+      test -f main.py
+      test -f db.json
+      test -f telegram_approval.py
+      test -f manus_worker.py
 
-      - name: Search and analyze missions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-3.8-flash
-        run: python main.py
+  - name: Search and analyze missions
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.8-flash
+    run: python main.py
 
-      - name: Execute approved missions with Manus
-        env:
-          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
-        run: python manus_worker.py
+  - name: Automatically approve suitable missions
+    run: python telegram_approval.py
 
-      - name: Save database safely
-        if: always()
-        run: |
-          git config user.name "TENA IZY BOT"
-          git config user.email "tena-izy-bot@users.noreply.github.com"
-          git add db.json
+  - name: Execute approved missions with Manus
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    run: python manus_worker.py
 
-          if git diff --cached --quiet; then
-            echo "No database changes."
-            exit 0
-          fi
+  - name: Save database safely
+    if: always()
+    run: |
+      git config user.name "TENA IZY BOT"
+      git config user.email "tena-izy-bot@users.noreply.github.com"
 
-          git commit -m "BOT WORKER: update missions"
-          git fetch origin main
+      git add db.json
 
-          if ! git merge-base --is-ancestor origin/main HEAD; then
-            echo "ERROR: Remote branch changed unexpectedly."
-            exit 1
-          fi
+      if git diff --cached --quiet; then
+        echo "No database changes."
+        exit 0
+      fi
 
-          git push origin HEAD:main
+      git commit -m "TENA IZY: autonomous mission update"
+
+      git fetch origin main
+
+      if ! git merge-base --is-ancestor origin/main HEAD; then
+        echo "ERROR: Remote branch changed unexpectedly."
+        exit 1
+      fi
+
+      git push origin HEAD:main
