@@ -7,27 +7,42 @@ permissions:
   contents: write
 
 concurrency:
-  group: tena-izy-delivery-pipeline
+  group: tena-izy-db
   cancel-in-progress: false
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Verify completed mission reports
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run verifier
         run: python work_verifier.py
+
       - name: Save database
         run: |
           git config user.name "TENA IZY BOT"
           git config user.email "tena-izy-bot@users.noreply.github.com"
+
           git add db.json
-          git diff --cached --quiet || git commit -m "TENA IZY: verify work reports"
-          git pull --rebase origin main
-          git push origin main
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification."
+            exit 0
+          fi
+
+          git commit -m "TENA IZY: update verification status"
+          git push origin HEAD:main
