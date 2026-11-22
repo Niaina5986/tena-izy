@@ -1,56 +1,76 @@
 name: BOT WORKER - Autonomous Engine
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
-  schedule:
-    - cron: "*/30 * * * *"
+schedule:
+- cron: "*/30 * * * *"
 
 permissions:
-  contents: write
+contents: write
 
 concurrency:
-  group: bot-worker
-  cancel-in-progress: false
+group: tena-izy-db
+cancel-in-progress: false
 
 jobs:
-  bot-worker:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+bot-worker:
+runs-on: ubuntu-latest
+timeout-minutes: 30
 
-    steps:
-      - name: Télécharger le dépôt
-        uses: actions/checkout@v4
-        with:
-          token: ${{ github.token }}
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      ref: main
+      fetch-depth: 0
+      token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Installer Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.12"
 
-      - name: Vérifier les fichiers
-        run: |
-          test -f main.py
-          test -f db.json
-          test -f manus_worker.py
+  - name: Verify required files
+    run: |
+      test -f main.py
+      test -f db.json
+      test -f manus_worker.py
 
-      - name: Recherche et analyse Gemini
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-3.8-flash
-        run: python main.py
+  - name: Search and analyze missions
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.8-flash
+    run: python main.py
 
-      - name: Exécution Manus si mission approuvée
-        env:
-          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
-        run: python manus_worker.py
+  - name: Execute approved missions with Manus
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+    run: python manus_worker.py
 
-      - name: Sauvegarder les résultats
-        run: |
-          git config user.name "BOT WORKER"
-          git config user.email "bot-worker@users.noreply.github.com"
-          git add db.json
-          git diff --cached --quiet || git commit -m "BOT WORKER: update missions"
-          git push
+  - name: Save database safely
+    if: always()
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    run: |
+      git config user.name "TENA IZY BOT"
+      git config user.email "tena-izy-bot@users.noreply.github.com"
+
+      git add db.json
+
+      if git diff --cached --quiet; then
+        echo "No database changes."
+        exit 0
+      fi
+
+      git commit -m "BOT WORKER: update missions"
+
+      git fetch origin main
+
+      if ! git merge-base --is-ancestor origin/main HEAD; then
+        echo "ERROR: Remote branch changed unexpectedly."
+        exit 1
+      fi
+
+      git push origin HEAD:main
