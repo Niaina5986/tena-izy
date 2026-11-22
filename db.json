@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-22T11:41:55.425894+00:00",
+  "updated_at": "2026-11-22T11:58:21.167192+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -181,7 +181,7 @@
         },
         "delivery": {
           "status": "WAITING_FOR_REAL_PR",
-          "checked_at": "2026-11-22T11:41:55.425865+00:00",
+          "checked_at": "2026-11-22T11:58:21.167162+00:00",
           "note": "Aucune URL de Pull Request réelle trouvée dans le rapport Manus. Aucune livraison n'est déclarée."
         }
       },
