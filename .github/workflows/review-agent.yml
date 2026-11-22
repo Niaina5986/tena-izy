@@ -1,63 +1,61 @@
 name: Review Agent
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
-contents: write
+  contents: write
 
 concurrency:
-group: tena-izy-db
-cancel-in-progress: false
+  group: tena-izy-db
+  cancel-in-progress: false
 
 jobs:
-review:
-runs-on: ubuntu-latest
-timeout-minutes: 20
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-    with:
-      ref: main
-      fetch-depth: 0
-      token: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-  - name: Setup Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.12"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-  - name: Verify required files
-    run: |
-      test -f db.json
-      test -f review_agent.py
+      - name: Verify required files
+        run: |
+          test -f db.json
+          test -f review_agent.py
 
-  - name: Run mission review
-    env:
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-    run: python review_agent.py
+      - name: Run mission review
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python review_agent.py
 
-  - name: Save review reports
-    if: always()
-    run: |
-      git config user.name "TENA IZY BOT"
-      git config user.email "tena-izy-bot@users.noreply.github.com"
+      - name: Save review reports
+        if: always()
+        run: |
+          git config user.name "TENA IZY BOT"
+          git config user.email "tena-izy-bot@users.noreply.github.com"
+          git add review_reports/
 
-      git add review_reports/
+          if git diff --cached --quiet; then
+            echo "No review report changes."
+            exit 0
+          fi
 
-      if git diff --cached --quiet; then
-        echo "No review report changes."
-        exit 0
-      fi
+          git commit -m "REVIEW AGENT: update mission reports"
+          git fetch origin main
 
-      git commit -m "REVIEW AGENT: update mission reports"
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "ERROR: Remote branch changed unexpectedly."
+            exit 1
+          fi
 
-      git fetch origin main
-
-      if ! git merge-base --is-ancestor origin/main HEAD; then
-        echo "ERROR: Remote branch changed unexpectedly."
-        exit 1
-      fi
-
-      git push origin HEAD:main
+          git push origin HEAD:main
