@@ -9,36 +9,61 @@ import subprocess
 import requests
 
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
 DB_FILE = "db.json"
-
-GH_PAT = os.getenv("GH_PAT") or os.getenv("GITHUB_TOKEN")
-
 API = "https://api.github.com"
 
-if not GH_PAT:
-    raise RuntimeError("GH_PAT ou GITHUB_TOKEN manquant.")
+GH_PAT = (
+    os.getenv("GH_PAT")
+    or os.getenv("GITHUB_TOKEN")
+)
 
-HEADERS = {
-    "Authorization": f"Bearer {GH_PAT}",
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28"
-}
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
 
 
 def log(message):
     print(f"[TENA IZY DELIVERY] {message}")
 
 
+def get_headers():
+    token = (
+        os.getenv("GH_PAT")
+        or os.getenv("GITHUB_TOKEN")
+    )
+
+    if not token:
+        raise RuntimeError(
+            "GH_PAT ou GITHUB_TOKEN manquant. "
+            "Configure le secret GH_PAT dans GitHub Actions."
+        )
+
+    return {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+
+
 def load_db():
+    if not os.path.exists(DB_FILE):
+        raise FileNotFoundError(
+            "Le fichier db.json est introuvable."
+        )
+
     with open(DB_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_db(data):
     with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+        json.dump(
+            data,
+            f,
+            indent=2,
+            ensure_ascii=False
+        )
 
 
 def get_missions(data):
@@ -52,7 +77,25 @@ def get_missions(data):
         if isinstance(data.get("opportunities"), list):
             return data["opportunities"]
 
-    raise ValueError("Structure db.json non reconnue.")
+    raise ValueError(
+        "Structure db.json non reconnue."
+    )
+
+
+def get_execution(mission):
+    if not isinstance(mission.get("execution"), dict):
+        mission["execution"] = {}
+
+    return mission["execution"]
+
+
+def get_delivery(mission):
+    execution = get_execution(mission)
+
+    if not isinstance(execution.get("delivery"), dict):
+        execution["delivery"] = {}
+
+    return execution["delivery"]
 
 
 def get_repo_and_issue(url):
@@ -62,28 +105,35 @@ def get_repo_and_issue(url):
     )
 
     if not match:
-        raise ValueError("URL GitHub de mission invalide.")
+        raise ValueError(
+            "URL GitHub de mission invalide."
+        )
 
     owner, repo, number = match.groups()
 
-    return owner, repo.replace(".git", ""), int(number)
+    return (
+        owner,
+        repo.replace(".git", ""),
+        int(number)
+    )
 
 
 def github_get(url):
     response = requests.get(
         url,
-        headers=HEADERS,
+        headers=get_headers(),
         timeout=30
     )
 
     response.raise_for_status()
+
     return response.json()
 
 
 def github_post(url, payload):
     response = requests.post(
         url,
-        headers=HEADERS,
+        headers=get_headers(),
         json=payload,
         timeout=30
     )
@@ -98,23 +148,25 @@ def github_post(url, payload):
 
 
 def extract_patch(mission):
-    execution = mission.get("execution") or {}
+    execution = get_execution(mission)
 
-    # Priorité au patch structuré fourni par Manus.
     patch = execution.get("patch")
 
     if patch:
         return patch.strip()
 
-    # Sinon, chercher un patch dans le rapport Manus.
     result = execution.get("result", "")
 
     if isinstance(result, dict):
         patch = result.get("patch")
+
         if patch:
             return patch.strip()
 
-        result = json.dumps(result, ensure_ascii=False)
+        result = json.dumps(
+            result,
+            ensure_ascii=False
+        )
 
     if not isinstance(result, str):
         return None
@@ -125,7 +177,11 @@ def extract_patch(mission):
     ]
 
     for pattern in patterns:
-        match = re.search(pattern, result, re.DOTALL | re.IGNORECASE)
+        match = re.search(
+            pattern,
+            result,
+            re.DOTALL | re.IGNORECASE
+        )
 
         if match:
             candidate = match.group(1).strip()
@@ -133,7 +189,6 @@ def extract_patch(mission):
             if "--- " in candidate and "+++ " in candidate:
                 return candidate
 
-    # Accepter un rapport qui contient directement un diff.
     if (
         result.lstrip().startswith("diff --git")
         or (
@@ -152,7 +207,9 @@ def check_mission(owner, repo, issue_number):
     )
 
     if repo_data.get("archived"):
-        raise RuntimeError("Dépôt archivé.")
+        raise RuntimeError(
+            "Dépôt archivé."
+        )
 
     permissions = repo_data.get("permissions") or {}
 
@@ -227,22 +284,30 @@ def run_git(command, cwd=None, env=None):
 
 
 def create_delivery(mission):
-    mission_id = str(mission.get("id", "unknown"))
+    execution = get_execution(mission)
+    delivery = get_delivery(mission)
 
-    delivery = mission.setdefault("delivery", {})
+    mission_id = str(
+        mission.get("id", "unknown")
+    )
 
     if delivery.get("pr_url"):
-        log(f"PR déjà créée pour {mission_id}")
+        log(
+            f"PR déjà créée pour {mission_id}"
+        )
         return
 
     patch = extract_patch(mission)
 
     if not patch:
         delivery["status"] = "WAITING_FOR_MANUS_PATCH"
+        delivery["updated_at"] = now()
+
         mission["status"] = "WAITING_DELIVERY"
+        execution["status"] = "WAITING_DELIVERY"
 
         log(
-            f"{mission_id}: aucun patch réel fourni par Manus."
+            f"{mission_id}: aucun patch fourni par Manus."
         )
         return
 
@@ -266,21 +331,30 @@ def create_delivery(mission):
 
     branch = (
         "tena-izy/"
-        + re.sub(r"[^a-zA-Z0-9_-]", "-", mission_id)
+        + re.sub(
+            r"[^a-zA-Z0-9_-]",
+            "-",
+            mission_id
+        )
         + "-"
         + uuid.uuid4().hex[:6]
     )
 
-    temp_dir = tempfile.mkdtemp(prefix="tena-izy-")
+    temp_dir = tempfile.mkdtemp(
+        prefix="tena-izy-"
+    )
 
     try:
-        # Authentification temporaire GitHub.
+        token = (
+            os.getenv("GH_PAT")
+            or os.getenv("GITHUB_TOKEN")
+        )
+
         auth = base64.b64encode(
-            f"x-access-token:{GH_PAT}".encode()
+            f"x-access-token:{token}".encode()
         ).decode()
 
         git_env = os.environ.copy()
-
         git_env["GIT_TERMINAL_PROMPT"] = "0"
 
         git_config = [
@@ -306,7 +380,6 @@ def create_delivery(mission):
             env=git_env
         )
 
-        # Ne pas transmettre le token aux commandes suivantes.
         clean_env = os.environ.copy()
 
         clean_env.pop("GH_PAT", None)
@@ -314,38 +387,58 @@ def create_delivery(mission):
         clean_env.pop("GITHUB_ACCESS_TOKEN", None)
 
         run_git(
-            ["git", "checkout", "-b", branch],
+            [
+                "git",
+                "checkout",
+                "-b",
+                branch
+            ],
             cwd=temp_dir,
             env=clean_env
         )
 
-        # Appliquer le patch.
         patch_file = os.path.join(
             temp_dir,
             "tena_izy.patch"
         )
 
-        with open(patch_file, "w", encoding="utf-8") as f:
+        with open(
+            patch_file,
+            "w",
+            encoding="utf-8"
+        ) as f:
             f.write(patch)
             f.write("\n")
 
         run_git(
-            ["git", "apply", "--check", patch_file],
+            [
+                "git",
+                "apply",
+                "--check",
+                patch_file
+            ],
             cwd=temp_dir,
             env=clean_env
         )
 
         run_git(
-            ["git", "apply", patch_file],
+            [
+                "git",
+                "apply",
+                patch_file
+            ],
             cwd=temp_dir,
             env=clean_env
         )
 
         os.remove(patch_file)
 
-        # Vérifier qu'il existe réellement des modifications.
         changes = run_git(
-            ["git", "status", "--porcelain"],
+            [
+                "git",
+                "status",
+                "--porcelain"
+            ],
             cwd=temp_dir,
             env=clean_env
         )
@@ -355,9 +448,13 @@ def create_delivery(mission):
                 "Le patch ne produit aucune modification."
             )
 
-        # Identité du bot.
         run_git(
-            ["git", "config", "user.name", "TENA IZY"],
+            [
+                "git",
+                "config",
+                "user.name",
+                "TENA IZY"
+            ],
             cwd=temp_dir,
             env=clean_env
         )
@@ -390,7 +487,6 @@ def create_delivery(mission):
             env=clean_env
         )
 
-        # Envoyer la branche avec authentification temporaire.
         run_git(
             git_config + [
                 "push",
@@ -401,13 +497,12 @@ def create_delivery(mission):
             env=git_env
         )
 
-        # Créer une Pull Request en brouillon.
         pr = github_post(
             f"{API}/repos/{owner}/{repo}/pulls",
             {
                 "title": (
-                    f"Automated solution: "
-                    f"{issue.get('title', 'Task')}"
+                    "Automated solution: "
+                    + issue.get("title", "Task")
                 ),
                 "head": branch,
                 "base": default_branch,
@@ -427,24 +522,39 @@ def create_delivery(mission):
         delivery["branch"] = branch
         delivery["pr_url"] = pr["html_url"]
         delivery["pr_number"] = pr["number"]
-        delivery["created_at"] = datetime.now(
-            timezone.utc
-        ).isoformat()
+        delivery["created_at"] = now()
 
-        mission["status"] = "DELIVERED"
+        execution["delivery"] = delivery
+        execution["status"] = "WAITING_DELIVERY"
 
-        log(f"PR créée : {pr['html_url']}")
+        mission["status"] = "WAITING_DELIVERY"
+
+        log(
+            f"Pull Request créée : {pr['html_url']}"
+        )
 
     finally:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(
+            temp_dir,
+            ignore_errors=True
+        )
 
 
 def main():
+    if not (
+        os.getenv("GH_PAT")
+        or os.getenv("GITHUB_TOKEN")
+    ):
+        raise RuntimeError(
+            "GH_PAT ou GITHUB_TOKEN manquant. "
+            "Ajoute le secret GH_PAT dans GitHub Actions."
+        )
+
     data = load_db()
     missions = get_missions(data)
 
     for mission in missions:
-        execution = mission.get("execution") or {}
+        execution = get_execution(mission)
 
         mission_status = str(
             mission.get("status", "")
@@ -462,15 +572,14 @@ def main():
                 create_delivery(mission)
 
             except Exception as error:
-                delivery = mission.setdefault(
-                    "delivery", {}
-                )
+                delivery = get_delivery(mission)
 
                 delivery["status"] = "DELIVERY_ERROR"
                 delivery["error"] = str(error)
-                delivery["updated_at"] = datetime.now(
-                    timezone.utc
-                ).isoformat()
+                delivery["updated_at"] = now()
+
+                execution["status"] = "DELIVERY_BLOCKED"
+                mission["status"] = "DELIVERY_BLOCKED"
 
                 log(
                     f"Erreur mission "
@@ -478,6 +587,8 @@ def main():
                 )
 
     save_db(data)
+
+    log("Traitement terminé.")
 
 
 if __name__ == "__main__":
