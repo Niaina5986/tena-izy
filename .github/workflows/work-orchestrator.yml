@@ -16,23 +16,27 @@ concurrency:
 jobs:
   orchestrator:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install requests
 
       - name: Verify missions
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: python work_verifier.py
 
       - name: Deliver missions
@@ -47,6 +51,7 @@ jobs:
         run: python work_telegram_notify.py
 
       - name: Save database
+        if: always()
         run: |
           git config user.name "TENA IZY BOT"
           git config user.email "tena-izy-bot@users.noreply.github.com"
@@ -59,4 +64,12 @@ jobs:
           fi
 
           git commit -m "TENA IZY: autonomous execution update"
+
+          git fetch origin main
+
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "ERREUR: branche distante modifiée."
+            exit 1
+          fi
+
           git push origin HEAD:main
