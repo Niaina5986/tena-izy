@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-22T11:41:26.584073+00:00",
+  "updated_at": "2026-11-22T11:41:38.063446+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -127,7 +127,7 @@
         "bug"
       ],
       "source": "GitHub",
-      "status": "VERIFIED",
+      "status": "WAITING_DELIVERY",
       "created_in_system": "2026-11-20T06:34:25.762903+00:00",
       "analysis": {
         "id": "6505828301",
@@ -144,7 +144,7 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "selected_at": "2026-11-20T06:37:01.739146+00:00",
       "execution": {
-        "status": "VERIFIED",
+        "status": "WAITING_DELIVERY",
         "executor": "MANUS",
         "task_id": "nmaQsmbhoDGuWtPGLHjQPY",
         "task_url": "https://manus.im/app/nmaQsmbhoDGuWtPGLHjQPY",
@@ -178,6 +178,11 @@
           "status": "PASSED",
           "checked_at": "2026-11-22T11:41:26.584059+00:00",
           "note": "Rapport suffisamment documenté pour le contrôle de livraison."
+        },
+        "delivery": {
+          "status": "WAITING_FOR_REAL_PR",
+          "checked_at": "2026-11-22T11:41:38.063415+00:00",
+          "note": "Aucune URL de Pull Request réelle trouvée dans le rapport Manus. Aucune livraison n'est déclarée."
         }
       },
       "telegram": {
