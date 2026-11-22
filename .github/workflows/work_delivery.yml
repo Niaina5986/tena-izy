@@ -1,0 +1,36 @@
+name: TENA IZY - Work Delivery
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tena-izy-delivery-pipeline
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify delivery evidence against GitHub
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python work_delivery.py
+      - name: Save database
+        run: |
+          git config user.name "TENA IZY BOT"
+          git config user.email "tena-izy-bot@users.noreply.github.com"
+          git add db.json
+          git diff --cached --quiet || git commit -m "TENA IZY: update delivery status"
+          git pull --rebase origin main
+          git push origin main
