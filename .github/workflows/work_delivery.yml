@@ -7,35 +7,44 @@ permissions:
   contents: write
 
 concurrency:
-  group: tena-izy-delivery-pipeline
+  group: tena-izy-db
   cancel-in-progress: false
 
 jobs:
-  deliver:
+  delivery:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Verify delivery evidence against GitHub
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Execute delivery
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
-          GITHUB_TOKEN: ${{ github.token }}
         run: python work_delivery.py
+
       - name: Save database
         run: |
           git config user.name "TENA IZY BOT"
           git config user.email "tena-izy-bot@users.noreply.github.com"
+
           git add db.json
-          git diff --cached --quiet || git commit -m "TENA IZY: update delivery status"
-          git fetch origin main
-git rebase origin/main || {
-  git rebase --abort
-  echo "Conflit Git détecté."
-  exit 1
-}
-          
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification."
+            exit 0
+          fi
+
+          git commit -m "TENA IZY: update delivery status"
+          git push origin HEAD:main
