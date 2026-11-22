@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-22T15:55:32.867321+00:00",
+  "updated_at": "2026-11-22T16:25:40.181010+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -1428,7 +1428,7 @@
       "updated_at": "2026-11-22T15:23:36Z",
       "labels": [],
       "source": "GitHub",
-      "status": "WAITING_APPROVAL",
+      "status": "APPROVED",
       "created_in_system": "2026-11-22T15:51:38.664920+00:00",
       "analysis": {
         "id": "6544130800",
@@ -1454,7 +1454,8 @@
       "telegram": {
         "message_id": 9,
         "sent_at": "2026-11-22T15:55:32.867300+00:00"
-      }
+      },
+      "approved_at": "AUTO"
     },
     {
       "id": "6544388011",
