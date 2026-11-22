@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-22T11:58:21.167192+00:00",
+  "updated_at": "2026-11-22T15:54:27.794602+00:00",
   "missions": [
     {
       "id": "6506009703",
@@ -873,6 +873,880 @@
       "score": 5,
       "analyzed_at": "2026-11-20T06:37:01.737196+00:00",
       "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544413174",
+      "title": "[Feature] Parser Debugger tool: show everything a parser extracted, where it failed, and what the hand is missing",
+      "description": "## Summary\n\nAdd a **Parser Debugger** to fpdb-3's tools: paste a hand history (or open a file), and see **everything** the parser did with it — which site and skin were detected and why, every field it extracted, every step that failed or silently found nothing, every value it quietly repaired, and every check a valid hand is expected to pass.\n\nToday the only way to diagnose a hand that does not import is to run a bulk import, read the counters (stored / partial / skipped / errors) and dig through the log. The debugger answers *what went wrong, on which line, at which step* in one place, without touching the database.\n\nIt ships twice over one shared core:\n\n- **Tools → Parser Debugger…** in the fpdb GUI, next to *Logger Dev Tool*;\n- **`tools/parser_debugger.py`** on the command line (text or JSON output), for scripts, CI and bug reports.\n\n## Motivating example\n\nThe Sökö excerpt kept in `regression-test-files/unsupported-sites/soko/soko_2005_001_complete_anonymized.txt`:\n\n```text\nGame # 90000001 - Soko Pot Limit EUR 0,25 - Table \"Anonymous_Soko_01\"\nGame ended 2005-01-01 12:00:00 UTC\n\nPlayers:\nVillain1 (EUR 62,50 in seat 1)\nHero (EUR 40,50 in seat 2)\n...\nVillain1 Ante (0,25)\n```\n\nWhat happens today:\n\n1. `IdentifySite.idSite` matches `EntractionToFpdb.re_Identify` (`Game\\s#\\s\\d+\\s-\\s`) and hands the file to the Entraction converter.\n2. `EntractionToFpdb.determineGameType` fails on `re_GameInfo`, finds the game name with `re_GameName` and raises `FpdbParseError(\"Unsupported game 'Soko Pot Limit EUR 0,25'\")` (#891).\n3. The importer counts **1 error**. The reason exists only in the log.\n\nThe companion file `soko_2005_002_header_missing_anonymized.txt` is worse: it is **not recognized at all**, and nothing says which site came closest or what header was expected.\n\nWhat the debugger should show instead, for the first file:\n\n- **Detection**: Entraction, matched by `re_Identify` on line 1; other networks tried, none matched.\n- **Step trace**: `determineGameType` ✗ — `re_GameInfo` no match; `re_GameName` matched `Soko Pot Limit EUR 0,25` → **UnsupportedGame**, line 1, header stage. Every later step marked *not reached*.\n- **Explanation**: \"Entraction reads hold'em and Omaha only (`readSupportedGames`); Sökö is refused on purpose, see #891.\"\n\nAnd for the second: \"No site recognized. Closest: Entraction (`Game # N - ` header expected on the first line, not found).\"\n\n## What already exists and can be reused\n\n| Building block | Where | Today |\n|---|---|---|\n| Site / skin detection, refusals | `IdentifySite.idSite`, `unsupported_reason`, `_select_*_skin_site` | Used by the importer; the reason of a choice is not reported |\n| Parse pipeline | `HandHistoryConverter.processHand` → `Hand.__init__` calling `readHandInfo`, `readPlayerStacks`, `markStreets`, `readBlinds`, `readSTP`, `readAntes`, `readButton`, `readHoleCards`, `readShowdownActions`, `readCommunityCards`, `readAction`, `readCollectPot`, `readShownCards`, `readOther`, `readTourneyResults` (`Hand.py` ~L2110 and ~L2488) | Runs as one block; the step that failed is only visible in a traceback |\n| Completeness warnings | `HandHistoryConverter._warn_if_hand_missing_expected_data` | Missing hand id / date / table, < 2 players, no blinds, no betting action — **logged only** |\n| Hand analysis | `HandDataReporter` (`_extract_hand_data`, `_analyze_failed_hand_object`, `_categorize_error_severity`) | Only enabled through `Importer.setHandDataReporter`; no UI |\n| Error classification | `ImprovedErrorHandler` (`ErrorSeverity`: temporary / recoverable / permanent) | Import-side only |\n| Expected results | `RegressionFileComparator.compare_importer_sidecars` with the `.hands` / `.hp` / `.gt` sidecars of `regression-test-files/` | Used by tests only |\n| Snapshot fingerprint | `tests/helpers/parser_regression.hand_fingerprint` | Tests only |\n| Anonymization | `tools/anonymize_hh.py` | CLI only |\n| Tools-menu precedent | *Logger Dev Tool* (`fpdb.pyw` `show_logger_dev_tool`, `menu_layout.py`) | — |\n\nThe work is mostly **gluing these together and making them visible**, plus a non-invasive trace.\n\n## Scope\n\n### Phase 1 — Core module and CLI (quick win)\n\nA new module, e.g. `fpdb_3_legacy/parser_debug.py`, with one entry point:\n\n```python\ndebug_parse(text: str, *, site: str | None = None, path_hint: str | None = None,\n            config: Configuration.Config) -> ParseDebugReport\n```\n\n- Runs detection and parsing exactly as the importer does (same `IdentifySite`, same converter classes, same import parameters), but **in memory**: no database, no `HudCache`, no file moved. It must never mutate the user's config (use the loaded config read-only).\n- Returns a `ParseDebugReport` dataclass: detection, per-hand results, diagnostics, checks, captured log records, timings — serialisable to JSON.\n- Captures every log record emitted during the parse (a temporary handler on the fpdb loggers) and attaches each to the hand being parsed. This alone surfaces the reasons that only reach the log today.\n- `t",
+      "url": "https://github.com/jejellyroll-fr/fpdb-3/issues/903",
+      "repository": "https://api.github.com/repos/jejellyroll-fr/fpdb-3",
+      "created_at": "2026-11-22T15:50:22Z",
+      "updated_at": "2026-11-22T15:50:22Z",
+      "labels": [
+        "feature"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664843+00:00",
+      "analysis": {
+        "id": "6544413174",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Clear feature request for adding a Parser Debugger tool to fpdb-3 with well-defined requirements. Technologically straightforward Python development task."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791076+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544385111",
+      "title": "BE-065 Duplicate report detection with text and image similarity",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\nBounty missions receive near-identical reports, either from copy-paste farming or genuine duplicates. Flag likely duplicates automatically using text similarity on report bodies and perceptual hashes on screenshots, so creators can mark them (SC-077).\n\n## User Story\n**As a** creator,  \n**I want to** likely duplicate reports flagged for me,  \n**so that** I don't read the same bug ten times.\n\n## Requirements and Context\n- Files: `backend/src/reports/duplicate-detector.service.ts (new)`, `backend/src/reports/duplicate-detector.service.spec.ts (new)`, `backend/src/reports/reports.module.ts (new)`, `backend/prisma/schema.prisma`\n- Text: normalized shingled MinHash (no external API). Similarity ≥ 0.8 flags.\n- Images: dHash of uploaded screenshots (use `sharp`). Hamming distance ≤ 6 flags.\n- Store `DuplicateCandidate { submissionId, candidateOfId, score, kind }`.\n- Run on submission creation. The owner sees candidates on `GET /api/missions/:id/submissions`.\n\n## Suggested Implementation\n```ts\n// IN FILES: backend/src/reports/duplicate-detector.service.ts, backend/src/reports/duplicate-detector.service.spec.ts, backend/src/reports/reports.module.ts, backend/prisma/schema.prisma\n// 1. Write the MinHash implementation and tests.\n// 2. Write the dHash and tests with fixture images.\n// 3. Add the model and migration.\n// 4. Hook into submission creation.\n```\n\n## Acceptance Criteria\n- [ ] The fixture pairs (identical, paraphrased, unrelated) produce the expected flags.\n- [ ] Jest specs cover the happy path and every error branch listed above. `npm run lint`, `npm test` and `npm run build` pass.\n- [ ] New env vars are in `backend/.env.example`. New tables ship with a Prisma migration.\n\n## Submission Guidelines\n- **Branch:** `backend/be-065-duplicate-report-detection-with-text-and`\n- **Depends on:** `none`\n- **PR:** `feat(backend): detect duplicate reports`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/414",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:53Z",
+      "updated_at": "2026-11-22T15:47:53Z",
+      "labels": [
+        "backend",
+        "complexity:high",
+        "quality",
+        "reports"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664885+00:00",
+      "analysis": {
+        "id": "6544385111",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Specific backend service implementation using text and image similarity for duplicate report detection in a NestJS app. Well scoped."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791092+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544381209",
+      "title": "SC-026 Linear vested payouts in quid-store stream.rs",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\nLarge bounties paid in one transfer give a hunter no reason to stick around for follow-up questions or regression checks. Let a creator choose a vesting schedule for a mission, so approved rewards stream to the hunter over time and the hunter claims as it vests.\n\n## User Story\n**As a** creator running a long QA engagement,  \n**I want to** release a hunter's reward over 30 days,  \n**so that** hunters stay available for follow-up retests.\n\n## Requirements and Context\n- Files: `quid-contract/contracts/quid-store/src/stream.rs`, `quid-contract/contracts/quid-store/src/lib.rs`, `quid-contract/contracts/quid-store/src/types.rs`, `quid-contract/contracts/quid-store/src/test.rs`\n- Per-mission `Vesting { cliff_secs: u64, duration_secs: u64 }`, set before the first submission.\n- With vesting set, `payout_participant` creates `Stream(mission_id, hunter) { total, claimed, start }` instead of transferring.\n- `claim_stream(mission_id, hunter)` (hunter auth) transfers `vested - claimed` using integer math that rounds down.\n- Keep the vesting math in `stream.rs` as pure functions with unit tests.\n\n## Suggested Implementation\n```rust\n// IN FILES: quid-contract/contracts/quid-store/src/stream.rs, quid-contract/contracts/quid-store/src/lib.rs, quid-contract/contracts/quid-store/src/types.rs, quid-contract/contracts/quid-store/src/test.rs\n// 1. Write vested_amount(total, start, cliff, duration, now) in stream.rs with exhaustive unit tests.\n// 2. Add the Stream key in persistent storage with TTL extension.\n// 3. Branch payout_participant on vesting.\n// 4. Add the claim_stream entrypoint and event.\n// 5. Test before the cliff, mid-stream, after the end, and repeated claims.\n```\n\n## Acceptance Criteria\n- [ ] The sum of all claims equals the stream total exactly, with no dust left behind.\n- [ ] Claiming before the cliff transfers nothing and returns `NothingVested`.\n- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test` pass.\n- [ ] New storage keys are documented in the contract README, and per-record entries call `extend_ttl`.\n\n## Submission Guidelines\n- **Branch:** `contracts/sc-026-linear-vested-payouts-in-quid-store`\n- **Depends on:** `none`\n- **PR:** `feat(contracts): add vested reward streams to quid-store`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/405",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:32Z",
+      "updated_at": "2026-11-22T15:47:32Z",
+      "labels": [
+        "contracts",
+        "soroban",
+        "payments",
+        "complexity:high"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664891+00:00",
+      "analysis": {
+        "id": "6544381209",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "HARD",
+        "automation": "MEDIUM",
+        "risk": "MEDIUM",
+        "suitable": true,
+        "explanation": "Rust smart contract feature implementation for linear vested payouts. Requires careful handling of integer math and state."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791094+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544380761",
+      "title": "SC-025 Tiered protocol fees with per-token caps",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\nA flat basis-point fee is too expensive on large bounties and too small on dust. Add fee tiers by gross amount and a per-token absolute cap in `quid-fee-collector`, used by the store's `fees.rs`.\n\n## User Story\n**As a** creator funding a large mission,  \n**I want to** a predictable, capped protocol fee,  \n**so that** Quid stays competitive for big ecosystem bounties.\n\n## Requirements and Context\n- Files: `quid-contract/contracts/quid-fee-collector/src/lib.rs`, `quid-contract/contracts/quid-fee-collector/src/types.rs`, `quid-contract/contracts/quid-fee-collector/src/test.rs`, `quid-contract/contracts/quid-store/src/fees.rs`\n- `set_fee_tiers(caller, tiers: Vec<(i128 /*min_gross*/, u32 /*bps*/)>)` sorted ascending, up to 8 tiers.\n- `set_fee_cap(caller, token, cap: i128)`. `compute_fee` applies the tier, then the cap.\n- Keep `compute_fee(gross)` backwards compatible, and add `compute_fee_for(token, gross)`.\n- Use `i128` checked math, and return an error on overflow instead of panicking.\n\n## Suggested Implementation\n```rust\n// IN FILES: quid-contract/contracts/quid-fee-collector/src/lib.rs, quid-contract/contracts/quid-fee-collector/src/types.rs, quid-contract/contracts/quid-fee-collector/src/test.rs, quid-contract/contracts/quid-store/src/fees.rs\n// 1. Add storage and setters for tiers and caps.\n// 2. Implement compute_fee_for.\n// 3. Switch fees.rs in quid-store to compute_fee_for.\n// 4. Add property-style tests over random grosses to prove fee <= cap and fee <= gross.\n```\n\n## Acceptance Criteria\n- [ ] Fees never exceed the cap or the gross amount across 1,000 generated cases.\n- [ ] Unsorted tier input is rejected.\n- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test` pass.\n- [ ] New storage keys are documented in the contract README, and per-record entries call `extend_ttl`.\n\n## Submission Guidelines\n- **Branch:** `contracts/sc-025-tiered-protocol-fees-with-per-token`\n- **Depends on:** `none`\n- **PR:** `feat(contracts): add tiered and capped protocol fees`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/404",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:30Z",
+      "updated_at": "2026-11-22T15:47:30Z",
+      "labels": [
+        "contracts",
+        "soroban",
+        "complexity:high",
+        "fees"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664894+00:00",
+      "analysis": {
+        "id": "6544380761",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Smart contract implementation for tiered protocol fees with absolute caps in Rust. Clear logic requirements."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791096+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544380273",
+      "title": "SC-020 quid-identity contract binding one person to one hunter account",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\nSybil resistance needs a way to say two wallets belong to the same person. Create a `quid-identity` contract where an attested identity (passkey credential hash, or a verifier-signed KYC-lite claim) maps to exactly one hunter address, and missions can require a bound identity.\n\n## User Story\n**As a** creator,  \n**I want to** require that each hunter is a distinct, verified person,  \n**so that** one person can't claim my bounty with ten wallets.\n\n## Requirements and Context\n- Files: `quid-contract/contracts/quid-identity/Cargo.toml (new)`, `quid-contract/contracts/quid-identity/src/lib.rs (new)`, `quid-contract/contracts/quid-identity/src/types.rs (new)`, `quid-contract/contracts/quid-identity/src/test.rs (new)`, `quid-contract/contracts/quid-identity/README.md (new)`\n- `bind(hunter, identity_hash: BytesN<32>, attestor, signature)` requires hunter auth and an attestor ed25519 signature over `(hunter, identity_hash)`.\n- One `identity_hash` maps to one address, and one address maps to one hash. Rebinding needs an admin-approved `unbind`.\n- `is_bound(hunter) -> bool` and `identity_of(hunter) -> Option<BytesN<32>>`.\n- Never store raw personal data, only salted hashes. Document the hashing scheme in the README.\n\n## Suggested Implementation\n```rust\n// IN FILES: quid-contract/contracts/quid-identity/Cargo.toml, quid-contract/contracts/quid-identity/src/lib.rs, quid-contract/contracts/quid-identity/src/types.rs, quid-contract/contracts/quid-identity/src/test.rs, quid-contract/contracts/quid-identity/README.md\n// 1. Scaffold the crate and its types.\n// 2. Implement bind with the signature check (reuse the pattern from SC-013).\n// 3. Implement uniqueness both ways.\n// 4. Test a duplicate identity, a duplicate address, a bad signature and admin unbind.\n```\n\n## Acceptance Criteria\n- [ ] Binding the same identity hash to a second address fails.\n- [ ] The README explains why no personal data is stored on-chain.\n- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test` pass.\n- [ ] New storage keys are documented in the contract README, and per-record entries call `extend_ttl`.\n\n## Submission Guidelines\n- **Branch:** `contracts/sc-020-quid-identity-contract-binding-one-person`\n- **Depends on:** `none`\n- **PR:** `feat(contracts): add quid-identity one-person-one-account registry`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/403",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:28Z",
+      "updated_at": "2026-11-22T15:47:28Z",
+      "labels": [
+        "contracts",
+        "soroban",
+        "complexity:high",
+        "sybil",
+        "identity",
+        "passkeys"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664896+00:00",
+      "analysis": {
+        "id": "6544380273",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "HARD",
+        "automation": "MEDIUM",
+        "risk": "MEDIUM",
+        "suitable": true,
+        "explanation": "New Rust smart contract development for identity binding. Requires cryptographic signature verification and state constraints."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791098+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544377983",
+      "title": "SC-010 New quid-proof-registry contract for On-Chain Proof-of-Test records",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\nProof-of-Test is Quid's anti-sybil core. A hunter can only claim a bounty after it's verified that their wallet actually ran a real transaction against the dApp under test. Create a new `quid-proof-registry` contract that stores verified proofs and that other contracts can query.\n\n## User Story\n**As a** creator funding a mission,  \n**I want to** rewards to go only to hunters who really used my dApp,  \n**so that** bots and sybil wallets can't farm my bounty.\n\n## Requirements and Context\n- Files: `quid-contract/contracts/quid-proof-registry/Cargo.toml (new)`, `quid-contract/contracts/quid-proof-registry/src/lib.rs (new)`, `quid-contract/contracts/quid-proof-registry/src/types.rs (new)`, `quid-contract/contracts/quid-proof-registry/src/error.rs (new)`, `quid-contract/contracts/quid-proof-registry/src/test.rs (new)`, `quid-contract/contracts/quid-proof-registry/README.md (new)`\n- `Proof { mission_id: u64, hunter: Address, target_contract: Address, tx_hash: BytesN<32>, ledger: u32, function: Symbol, verified_at: u64, verifier: Address }`.\n- `initialize(admin)`, `add_verifier` / `remove_verifier` (admin), `record_proof(verifier, proof)` (verifier auth), `get_proof(mission_id, hunter)`, `has_valid_proof(mission_id, hunter) -> bool`.\n- A `tx_hash` can only be recorded once across all missions (`DataKey::UsedTx(BytesN<32>)`), which blocks replaying one transaction for many bounties.\n- Persistent storage with TTL extension for proofs and used hashes. Emit `[\"proof\", \"recorded\"]`.\n\n## Suggested Implementation\n```rust\n// IN FILES: quid-contract/contracts/quid-proof-registry/Cargo.toml, quid-contract/contracts/quid-proof-registry/src/lib.rs, quid-contract/contracts/quid-proof-registry/src/types.rs, quid-contract/contracts/quid-proof-registry/src/error.rs, quid-contract/contracts/quid-proof-registry/src/test.rs, quid-contract/contracts/quid-proof-registry/README.md\n// 1. Scaffold the crate following quid-contract/README.md 'Adding a contract'.\n// 2. Implement storage, verifier allowlist and record_proof.\n// 3. Add the replay guard on tx_hash.\n// 4. Write tests: happy path, unknown verifier, duplicate tx hash, second proof for the same mission and hunter.\n```\n\n## Acceptance Criteria\n- [ ] Reusing a `tx_hash` for a second mission fails with `TxAlreadyUsed`.\n- [ ] Only allowlisted verifiers can record proofs.\n- [ ] The crate builds for `wasm32v1-none` with `stellar contract build`.\n- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test` pass.\n- [ ] New storage keys are documented in the contract README, and per-record entries call `extend_ttl`.\n\n## Submission Guidelines\n- **Branch:** `contracts/sc-010-new-quid-proof-registry-contract-for`\n- **Depends on:** `none`\n- **PR:** `feat(contracts): add quid-proof-registry contract`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/398",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:16Z",
+      "updated_at": "2026-11-22T15:47:16Z",
+      "labels": [
+        "phase:foundation",
+        "contracts",
+        "soroban",
+        "complexity:high",
+        "proof-of-test"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664898+00:00",
+      "analysis": {
+        "id": "6544377983",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "HARD",
+        "automation": "MEDIUM",
+        "risk": "MEDIUM",
+        "suitable": true,
+        "explanation": "New smart contract creation for on-chain proof-of-test records. Detailed architectural specifications provided."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791100+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544347147",
+      "title": "Research: WoW battlegrounds, Path of Exile leagues and Dota 1x6",
+      "description": "Look at three sources of ideas we can adapt: World of Warcraft's battlegrounds, Path of Exile's league mechanics and the Dota 2 custom game 1x6. The goal is inspiration, not copying. Note what makes each one work, then think about how it could fit our game.\n\n## World of Warcraft battlegrounds\n- **Maps and objectives:** capturing and holding points, carrying flags, escorting carts, and bosses or structures to attack or defend. How each map's layout supports its objective.\n- **Win conditions and pacing:** score limits, resource races, timers and comeback mechanics.\n- **Queue and matchmaking:** how players are queued, matched and balanced, rotating or weekend battlegrounds, and rewards for playing.\n\n## Path of Exile league mechanics\n- **League mechanics as map events:** temporary mechanics that show up during a map and change how it plays, such as encounters that open up, timed challenges, or areas that grow more dangerous.\n- **Risk and reward:** how they tempt players into harder fights for better loot.\n- **Rotation:** how new mechanics keep the game fresh, and which ones became permanent.\n\n## Dota 2 custom game: 1x6\n- **Free-for-all on one map:** six players, each with their own base on a shortened map. A player is out once their tower falls, and the last two settle it in a best-of-three duel.\n- **Talent orbs:** orbs drop from bosses (legendary) and hero kills (epic). They upgrade abilities and change how they work, with several talent choices per ability. This is close to our mods and ascensions.\n- **Pacing:** bosses and timed bounties pull players into fights all over the map.\n\n## What to produce\n- A write-up in this repo (`maps-and-layouts/` or `game-mechanics/`) with the ideas worth keeping and how they could work here\n- Links to where it could feed in:\n  - map layouts: you-are-not-prepared/moba-arpg-game#50\n  - map objective types: you-are-not-prepared/moba-arpg-game#51\n  - the queue and matchmaking\n\nPart of the run-up to Version 1.0 - MVP (you-are-not-prepared/moba-arpg-game#46).\n",
+      "url": "https://github.com/you-are-not-prepared/moba-arpg-ideas/issues/2",
+      "repository": "https://api.github.com/repos/you-are-not-prepared/moba-arpg-ideas",
+      "created_at": "2026-11-22T15:44:37Z",
+      "updated_at": "2026-11-22T15:47:04Z",
+      "labels": [
+        "research"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664900+00:00",
+      "analysis": {
+        "id": "6544347147",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pure design/inspiration brainstorming task rather than a concrete technical implementation."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-22T15:54:27.791102+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544272000",
+      "title": "[Bug bounty] Native('ETH') selector cannot resolve the native asset of Ethereum and EthereumTestnet — ETH is not flagged isNative (re-report of #2609)",
+      "description": "> Note: this is a re-report of #2609, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the remaining defect live through the documented public function `findAssetInfo`. It also corrects the closed report: `getFeeAssets('Ethereum')` and `findNativeAssetInfoOrThrow('Ethereum')` do NOT throw in 14.5.3 (verified live), so this report does not claim they do.\n\n# Bug Report\n\n## Describe the Bug\n\nEthereum and EthereumTestnet are the only chains in the registry with no native asset. Their ETH entries exist (`packages/assets/src/maps/assets.json`, assetId `0x0000000000000000000000000000000000000000`, 18 decimals, existential deposit `15000000000000`) but neither has `isNative` set. Every other chain in the registry has at least one asset flagged `isNative`.\n\nBecause of that, the documented `Native()` symbol selector — the public way to select a chain's native asset — cannot resolve ETH on either chain: `findAssetInfo('Ethereum', { symbol: Native('ETH') })` returns null, while the same call on a substrate chain returns its native asset. The native-asset lookup splits assets into native and foreign by the `isNative` flag (`findAssetInfoBySymbol` only searches the native list for a `Native()` selector), and on these two chains that list is empty.\n\n## To Reproduce\n\n```ts\nimport { findAssetInfo, Native } from '@paraspell/sdk' // version 14.5.3\n\nfindAssetInfo('Ethereum', { symbol: Native('ETH') })\nfindAssetInfo('EthereumTestnet', { symbol: Native('ETH') })\n```\n\n**Observed result (run 2026-11-22, `@paraspell/sdk` 14.5.3, Node.js v24.22.1):** both calls return `null`.\n\n```\nfindAssetInfo('Ethereum', Native('ETH')) => OK: null\nfindAssetInfo('Ethereum', {symbol:'ETH'}) => OK: {\"symbol\":\"ETH\",\"assetId\":\"0x0000000000000000000000000000000000000000\",\"decimals\":18,...}\n```\n\nControl — the same selector on a substrate chain works:\n\n```\nfindAssetInfo('Acala', Native('ACA')) [control] => OK: {\"symbol\":\"ACA\",\"decimals\":12,...,\"isNative\":true}\n```\n\nAnd the registry scan behind it, from `getAssetsObject`:\n\n```\nEthereum native assets: []\nEthereumTestnet native assets: []\n```\n\nThe plain symbol lookup `{ symbol: 'ETH' }` does return the ETH entry, so the asset data is present — only the `isNative` flag is missing.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (registry lookup only, no chain connection, no transaction):\n\n```\nfindNativeAssetInfoOrThrow('Ethereum') => OK: {\"symbol\":\"ETH\",\"assetId\":\"0x0000000000000000000000000000000000000000\",\"decimals\":18,...}\nfindAssetInfo('Ethereum', Native('ETH')) => OK: null\nfindAssetInfo('Ethereum', {symbol:'ETH'}) => OK: {\"symbol\":\"ETH\",\"assetId\":\"0x0000000000000000000000000000000000000000\",\"decimals\":18,...}\nfindAssetInfo('Acala', Native('ACA')) [control] => OK: {\"symbol\":\"ACA\",\"decimals\":12,...,\"isNative\":true}\nEthereum chain meta keys: ['isEVM','ss58Prefix','supportsDryRunApi','supportsXcmPaymentApi','relaychainSymbol','nativeAssetSymbol','assets']\nnativeAssetSymbol: ETH isEVM: true\n```\n\nNote the first line: `findNativeAssetInfoOrThrow('Ethereum')` works in 14.5.3, contrary to the closed report — that is why this re-report is narrowed to the `Native()` selector defect instead of repeating the old claims.\n\n## Expected Behavior\n\n`findAssetInfo('Ethereum', { symbol: Native('ETH') })` returns the ETH asset entry, as `Native('ACA')` does on Acala — the native asset of a supported chain is resolvable through the documented native selector.\n\n## Additional Context\n\nSuggested fix (data only, one line per chain): set `isNative: true` on the ETH entries for Ethereum and EthereumTestnet in `packages/assets/src/maps/assets.json`, matching every other chain in the registry.\n\nHonest scope note: the plain symbol lookup `{ symbol: 'ETH' }` and `getFeeAssets('Ethereum')` already work, so the user-facing impact is narrow — it bites callers that select the native asset through the `Native()` selector, which is the documented disambiguation form for native assets. No funds are at stake; the lookup returns null instead of the asset.\n\nPrevious report: #2609 (closed for template non-compliance, bug not evaluated).\n\n---\n\n## Contributor Eligibility\n\n- [x] My GitHub account's commit history is at least 6 months old. (Account Matt7cas created 2023-11-15.)\n- [x] I have set an on-chain identity on the Polkadot People Chain for my AssetHub address (below) and requested a registrar judgement of at least `Reasonable` (verifiable via [Subscan](https://people-polkadot.subscan.io/)). (Judgement Reasonable from dotID registrar #5, verified 2026-11-21.)\n- [x] I disclose any AI tools used to help write this report (or confirm none were used), and I understand and can explain its contents myself. (AI tools used: Muse helped draft this report; I reviewed it and understand it.)\n- [x] This report was authored and submitted",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2627",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:37:17Z",
+      "updated_at": "2026-11-22T15:37:17Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664902+00:00",
+      "analysis": {
+        "id": "6544272000",
+        "score": 9,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Precise bug report with clear reproduction details regarding native asset selector in TypeScript package."
+      },
+      "score": 9,
+      "analyzed_at": "2026-11-22T15:54:27.791103+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544259020",
+      "title": "[Bug bounty] Asset-id lookups throw DuplicateAssetIdError for DOT, GLMR, ASTR, FIL, MANTA on BifrostPolkadot and DOT, DOTON on Jamton (re-report of #2608)",
+      "description": "> Note: this is a re-report of #2608, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the documented public function `findAssetInfo`.\n\n# Bug Report\n\n## Describe the Bug\n\nThe asset registry (`packages/assets/src/maps/assets.json`) assigns the same `assetId` to different assets on BifrostPolkadot and Jamton, so looking an asset up by id — a documented public input form (`{ id: currencyID }`) — throws `DuplicateAssetIdError` instead of returning the asset.\n\nOn BifrostPolkadot, each voucher token shares its underlying token's id: DOT, vDOT and vsDOT all have `assetId` \"0\"; GLMR and vGLMR share \"1\"; ASTR and vASTR share \"3\"; FIL and vFIL share \"4\"; MANTA and vMANTA share \"8\". On Jamton, the native DOTON and foreign DOT share \"0\", and XAUH and CGT share \"3\". The data is inconsistent even within itself: vBNC on BifrostPolkadot has no `assetId` at all, while the other voucher tokens carry their underlying token's id.\n\n`findAssetInfoById` (`packages/assets/src/assets/search/findAssetInfoById.ts`) throws when more than one asset matches an id, so every one of these lookups fails.\n\n## To Reproduce\n\n```ts\nimport { findAssetInfo } from '@paraspell/sdk' // version 14.5.3\n\nfindAssetInfo('BifrostPolkadot', { id: '0' })\nfindAssetInfo('BifrostPolkadot', { id: '1' })\nfindAssetInfo('BifrostPolkadot', { id: '3' })\nfindAssetInfo('BifrostPolkadot', { id: '4' })\nfindAssetInfo('BifrostPolkadot', { id: '8' })\nfindAssetInfo('Jamton', { id: '0' })\nfindAssetInfo('Jamton', { id: '3' })\n```\n\n**Observed result (run 2026-11-22, `@paraspell/sdk` 14.5.3, Node.js v24.22.1):** every call above throws, for example:\n\n```\nDuplicateAssetIdError: Multiple assets found with the same ID: 0. Please specify asset directly by symbol using .currency({symbol: <ASSET_SYMBOL>})\n```\n\nThe same error is thrown for ids \"1\", \"3\", \"4\" and \"8\" on BifrostPolkadot, and for ids \"0\" and \"3\" on Jamton. The registry data behind it, from `getAssetsObject('BifrostPolkadot')`:\n\n```\nassets with assetId \"0\": [\"DOT\", \"vDOT\", \"vsDOT\"]\nassets with assetId \"0\" on Jamton: [\"DOTON\", \"DOT\"]\n```\n\nControls that work: `findAssetInfo('BifrostPolkadot', { id: '2' })` returns USDT, and `findAssetInfo('BifrostPolkadot', { symbol: 'DOT' })` returns DOT — so only the duplicated ids are broken.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (registry lookup only, no chain connection, no transaction):\n\n```\nfindAssetInfo('BifrostPolkadot', {id:'0'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 0. Please specify asset directly by symbol using .currency({symbol: <ASSET_SYMBOL>})\nfindAssetInfo('BifrostPolkadot', {id:'1'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 1. ...\nfindAssetInfo('BifrostPolkadot', {id:'3'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 3. ...\nfindAssetInfo('BifrostPolkadot', {id:'4'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 4. ...\nfindAssetInfo('BifrostPolkadot', {id:'8'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 8. ...\nfindAssetInfo('Jamton', {id:'0'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 0. ...\nfindAssetInfo('Jamton', {id:'3'}) => THROWS: DuplicateAssetIdError: Multiple assets found with the same ID: 3. ...\nfindAssetInfo('BifrostPolkadot', {id:'2'}) => OK: {\"assetId\":\"2\",\"symbol\":\"USDT\",...}\nfindAssetInfo('BifrostPolkadot', {symbol:'DOT'}) => OK: {\"assetId\":\"0\",\"symbol\":\"DOT\",...}\n```\n\n## Expected Behavior\n\nLooking up an asset by its id returns that asset. Each asset in the registry has a unique id, so `{ id: '0' }` on BifrostPolkadot resolves to DOT and `{ id: '0' }` on Jamton resolves to one asset instead of throwing.\n\n## Additional Context\n\nSuggested fix (data only): give the voucher tokens distinct ids, or drop `assetId` from vDOT, vGLMR, vASTR, vFIL, vMANTA and vsDOT to match vBNC, which already has none; and fix the Jamton duplicates (DOTON/DOT sharing \"0\", XAUH/CGT sharing \"3\"). The same class of duplicate also exists on Centrifuge, where USD and USDT both carry `assetId` \"1\" with the identical location (GeneralIndex 1984) — that is supporting evidence of the same data problem, not part of this report's reproduction.\n\nThe error message itself tells the user to select by symbol instead, so there is a workaround — but id selection is a documented public input form, and on these chains it is unusable for the most common assets, including DOT itself. No funds are lost; the lookup fails before anything is built.\n\nPrevious report: #2608 (closed for template non-compliance, bug not evaluated).\n\n---\n\n## Contributor Eligibility\n\n- [x] My GitHub account's commit history is at least 6 months old. (Account Matt7cas created 2023-11-15.)\n- [x] I h",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2626",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:36:03Z",
+      "updated_at": "2026-11-22T15:36:03Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664903+00:00",
+      "analysis": {
+        "id": "6544259020",
+        "score": 9,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Specific bug report addressing duplicate asset-id lookups throwing exceptions in the asset registry."
+      },
+      "score": 9,
+      "analyzed_at": "2026-11-22T15:54:27.791105+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544242946",
+      "title": "[Bug bounty] PolkadotJsApi getDryRunCall drops Astar XcmPaymentApi fee, origin fee is wrong (re-report of #2595)",
+      "description": "> Note: this is a re-report of #2595, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the public Builder interface and the public XCM API. One correction to the closed #2595: it said PJS underprices the origin fee. The live comparison below shows the opposite on this route — PJS quotes about 2.8x MORE than the PAPI path for the same transfer. The bug (the XcmPaymentApi branch is skipped for Astar in PJS) is real; the direction in the old report was wrong.\n\n# Bug Report\n\n## Describe the Bug\n\n`PolkadotJsApi.getDryRunCall` drops the Astar XcmPaymentApi carve-out. PAPI and Dedot both have it. PJS does not.\n\nFile: `packages/sdk-pjs/src/PolkadotJsApi.ts`, `getDryRunCall` gate:\n\n```ts\nif (\n  (this.hasXcmPaymentApiSupport(chain) &&\n    resultJson.ok.local_xcm &&\n    (feeAsset || (chain.startsWith('AssetHub') && destination === 'Ethereum'))) ||\n  resolvedFeeAsset.isCustomAsset\n) {\n```\n\nPAPI (`packages/sdk/src/PapiApi.ts:492-503`) and Dedot (`packages/sdk-dedot/src/DedotApi.ts:529-540`) both have:\n\n```ts\nconst USE_XCM_PAYMENT_API_CHAINS: TSubstrateChain[] = ['Astar']\n// ...\n(feeAsset ||\n  USE_XCM_PAYMENT_API_CHAINS.includes(chain) ||\n  (chain.startsWith('AssetHub') && destination === 'Ethereum'))\n```\n\nAstar supports XcmPaymentApi (`assets.json`: `Astar supportsXcmPaymentApi=true, supportsDryRunApi=true`). For a normal Astar transfer there is no workaround in PJS: passing `.feeAsset()` does not flip the gate, because `getDryRunCall` drops `feeAsset` unless the transaction method is `execute` (`PolkadotJsApi.ts:294`). So for Astar the PJS origin fee always comes from the fallback formula (`computeOriginFee`: `paymentInfo` partial fee plus delivery fees from `FeesPaid` events) instead of the XcmPaymentApi fee (`queryWeightToAssetFee` on the dry-run XCM weight plus delivery fee) that PAPI and Dedot compute.\n\n## To Reproduce\n\n```ts\nimport { ApiPromise, HttpProvider } from '@polkadot/api'\nimport { Builder } from '@paraspell/sdk-pjs' // version 14.5.3\n\nconst astarApi = await ApiPromise.create({ provider: new HttpProvider('https://rpc.astar.network') })\nconst hydApi = await ApiPromise.create({ provider: new HttpProvider('https://rpc.hydradx.cloud') })\n\nconst result = await Builder({ apiOverrides: { Astar: astarApi, Hydration: hydApi } })\n  .from('Astar')\n  .to('Hydration')\n  .currency({ symbol: 'ASTR', amount: 10000000000000000000n }) // 10 ASTR\n  .sender('5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D')\n  .recipient('5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D')\n  .getXcmFee()\n```\n\nThe same transfer through the public XCM API (which runs the PAPI Builder, `apps/xcm-api/src/x-transfer/x-transfer.service.ts` imports `Builder` from `@paraspell/sdk`):\n\n```bash\ncurl -X POST \"https://api.paraspell.xyz/v2/xcm-fee\" -H \"Content-Type: application/json\" -d '{\"from\":\"Astar\",\"to\":\"Hydration\",\"currency\":{\"symbol\":\"ASTR\",\"amount\":\"10000000000000000000\"},\"sender\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\",\"recipient\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\"}'\n```\n\nNo transaction is submitted and nothing is signed; both are read-only fee estimations.\n\n**Observed result (run 2026-11-22, Node.js v24.22.1, Linux, `@paraspell/sdk-pjs` 14.5.3, Astar specVersion 2500, Hydration specVersion 458):**\n\n| | PJS `Builder.getXcmFee()` | XCM API / PAPI `POST /v2/xcm-fee` |\n|---|---|---|\n| origin fee | 52359456282094809 | 18816665683486822 |\n| origin feeType | dryRun | dryRun |\n| origin weight refTime | 1327314315 | 1327314315 |\n| overall success | false | false |\n\nThe dry-run weight is identical (refTime 1327314315) in both, so both priced the same dry run. The PJS quote is 33542790598607987 higher — about 2.8x the PAPI fee, 33.5 ASTR on a 10 ASTR transfer. The PJS number was observed three times (identical every time); the API number twice (identical both times).\n\nTwo checks that the PJS fee comes from the fallback formula, not from XcmPaymentApi:\n\n1. The PJS fee does not move when the dry-run weight moves. A second PJS run returned a different origin weight (refTime 1476647578 instead of 1327314315) and the identical fee 52359456282094809. A weight-derived fee would have moved.\n2. The PJS fee decomposes exactly as the fallback formula. `paymentInfo` partial fee for the same built extrinsic is 52335956282094809; the PJS fee minus that is 23500000000000, the delivery fee. `computeOriginFee` is partial fee plus delivery fees from `FeesPaid` events.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk-pjs 14.5.3 (PJS side); live XCM API for the PAPI side\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (read-only fee estimation, no transaction submitted, nothing signed):\n\n```\nPJS getXcmFee() Astar -> Hydration, 10 ASTR (3 runs):\n  origin: { fee: \"52359456282094809\", feeType: \"dryRun\", sufficient: false,\n            asset: ASTR, weight: { refTime: \"1",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2625",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:34:29Z",
+      "updated_at": "2026-11-22T15:34:29Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664905+00:00",
+      "analysis": {
+        "id": "6544242946",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Clear bug report regarding a dropped fee carve-out in a specific SDK API method."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791107+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544236366",
+      "title": "Source check 2026-11-22",
+      "description": "## Official source re-check\n\n- checked: 2026-11-22T15:33:48Z on GitHub Actions run 45038278873\n- official sources reachable: 99 / 109 (HTTP check run by this script on 2026-11-22)\n- pages re-rendered without a value change: 0\n- pages whose published values changed: 4\n- rows marked for re-reading: 4\n\n### Marked rows\n\n- **Caesars Palace** (None, `caesars`, hotel)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:43:10Z -> 2026-11-22T14:57:27Z (https://www.caesars.com/corporate/disclaimer)\n  - source: https://www.caesars.com/corporate/disclaimer\n- **Horseshoe Las Vegas** (None, `rooms03`, strip-room)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:44:11Z -> 2026-11-22T15:33:48Z (https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip)\n  - source: https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip\n- **Daily No Limit Hold'em (six sessions; buy-ins not printed)** (None, `formats05`, strip-room)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:44:11Z -> 2026-11-22T15:33:48Z (https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip)\n  - source: https://www.caesars.com/las-vegas/explore/casino/poker-tournaments-las-vegas-strip\n- **$200 No Limit Hold'em Progressive Knock-Out Bounty $8K GTD (1Day)** (2026-11-23, `r012`, tournament)\n  - official source page printed different values on its last re-check\n  - official source verified against: 2026-11-17T00:40:58Z -> 2026-11-22T14:55:02Z (https://www.venetianlasvegas.com/content/dam/vlvweb/casino/poker/deepstack/2026/structures/dse_nov_2026-structure_30.pdf)\n  - source: https://www.venetianlasvegas.com/content/dam/vlvweb/casino/poker/deepstack/2026/structures/dse_nov_2026-structure_30.pdf\n---\n\nRe-read the affected structure sheets or policy pages before trusting a marked row.\nAfter that, re-run this workflow with 'Accept today's content as the new comparison baseline' = yes.\n",
+      "url": "https://github.com/karagemop466-tech/Poker1/issues/133",
+      "repository": "https://api.github.com/repos/karagemop466-tech/Poker1",
+      "created_at": "2026-11-22T15:33:50Z",
+      "updated_at": "2026-11-22T15:33:50Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664906+00:00",
+      "analysis": {
+        "id": "6544236366",
+        "score": 2,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Routine automated CI source re-check log dump, not an actionable development task."
+      },
+      "score": 2,
+      "analyzed_at": "2026-11-22T15:54:27.791109+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544231356",
+      "title": "[Bug bounty] getRouterFees drops the sending leg destination fee when the swap destination is the exchange chain (re-report of #2592, origin-only half)",
+      "description": "> Note: this is a re-report of #2592, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the public XCM API. It covers only the origin-only half of #2592. The destination-only half (receiving leg origin fee) is deliberately NOT re-reported here: it duplicates #2171, which is already confirmed, paid and reserved.\n\n# Bug Report\n\n## Describe the Bug\n\n`getRouterFees` (`packages/swap/src/transfer/getRouterFees.ts`) drops the sending leg destination fee in a one-leg routed swap where the destination is the exchange chain. In the three-leg path the swap is only added to `mergedHops` when both legs exist:\n\n```ts\n...(sendingChain && receivingChain\n  ? [{ chain: exchange.chain,\n       result: { ...swapChain,\n                 fee: swapChain.fee + (receivingChain?.origin.fee ?? 0n),\n                 isExchange: true } }]\n  : []),\n```\n\nWhen only the sending leg exists (destination is the exchange chain), there is no exchange hop, `finalOrigin` is the sending leg origin, `finalDestination` is the swap fee, and `hops` are the sending leg hops only — so `sendingChain.destination.fee` is in no segment. It is a real fee the user pays: it is the fee for executing the incoming XCM leg on the exchange chain. The both-legs branch proves the fee must be counted: it folds the receiving leg origin fee into the exchange hop the same way.\n\nThe same omission exists in `getSwapInfo.ts`: its exchange hop entry is also built only when `sendingInfo && receivingInfo`, and its `finalOrigin` is `sendingInfo.origin`, so `sendingInfo.destination` is dropped there too.\n\n## To Reproduce\n\nTwo read-only calls to the public XCM API. No transaction is submitted and nothing is signed. Sender `5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D` is a real public account with vDOT on Hydration (free 33,162,071,409). The currency is vDOT on Hydration (asset id 15, decimals 10), so amount `0.1` is 0.1 vDOT.\n\n1. Routed swap fee quote (origin-only: destination is the exchange chain):\n\n```bash\ncurl -X POST \"https://api.paraspell.xyz/v2/xcm-fee\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\":\"Hydration\",\"to\":\"BifrostPolkadot\",\n       \"currency\":{\"id\":\"15\",\"amount\":\"0.1\"},\n       \"sender\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\",\n       \"recipient\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\",\n       \"swapOptions\":{\"currencyTo\":{\"symbol\":\"DOT\"},\n                      \"exchange\":\"BifrostPolkadot\"}}'\n```\n\nObserved result (run 2026-11-22 ~14:15 UTC):\n\n```json\n{ \"success\": true,\n  \"origin\": { \"fee\": \"173\", \"asset\": { \"symbol\": \"USDT\", \"assetId\": \"10\" } },\n  \"destination\": { \"fee\": \"82896709668\", \"isExchange\": true,\n                   \"asset\": { \"symbol\": \"BNC\" } },\n  \"hops\": [] }\n```\n\n2. The same leg quoted on its own (same call without `swapOptions`):\n\n```bash\ncurl -X POST \"https://api.paraspell.xyz/v2/xcm-fee\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\":\"Hydration\",\"to\":\"BifrostPolkadot\",\n       \"currency\":{\"id\":\"15\",\"amount\":\"0.1\"},\n       \"sender\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\",\n       \"recipient\":\"5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D\"}'\n```\n\nObserved result:\n\n```json\n{ \"success\": true,\n  \"origin\": { \"fee\": \"173\", \"asset\": { \"symbol\": \"USDT\", \"assetId\": \"10\" } },\n  \"destination\": { \"fee\": \"33617947\", \"asset\": { \"symbol\": \"vDOT\", \"assetId\": \"0\" } },\n  \"hops\": [] }\n```\n\nThe routed quote's origin fee (173 USDT) is identical to the leg's origin fee, so the routed origin segment is the sending leg origin. But the leg's destination fee — 33,617,947 vDOT (0.0033617947 vDOT) — appears in no segment of the routed quote.\n\nExpected: the 33,617,947 vDOT sending leg destination fee appears in the routed quote, for example folded into an exchange hop the same way the both-legs branch folds in the receiving leg origin fee.\nActual: it is in no segment — origin is 173 USDT, destination is 82,896,709,668 BNC (the swap fee), hops are empty.\n\n## Environment\n\n- OS: Linux\n- Framework: XCM API (live, https://api.paraspell.xyz/v2)\n- XCM Tool version: live XCM API, run 2026-11-22 ~14:15 UTC (the code path matches `packages/swap/src/transfer/getRouterFees.ts` on main as of 2026-11-22)\n- NodeJS version: n/a (server-side)\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 ~14:15 UTC (read-only fee quotes, no transaction submitted, nothing signed):\n\n```\nRouted swap fee quote (from Hydration, to BifrostPolkadot,\n  0.1 vDOT -> DOT on BifrostPolkadot):\n  success: true\n  origin:      fee 173, asset USDT id 10\n  destination: fee 82896709668, asset BNC, isExchange true\n  hops:        []\n\nPlain leg fee quote (same transfer, no swapOptions):\n  success: true\n  origin:      fee 173, asset USDT id 10\n  destination: fee 33617947, asset vDOT id 0\n  hops:        []\n\nMissing from the routed quote: 33617947 vDOT (0.0033617947 vDOT),\nabout 3.4% of the 0.1 vDOT being swapped.\n```\n\n## Expected Behavior\n\nThe routed swap fee quote i",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2624",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:33:22Z",
+      "updated_at": "2026-11-22T15:33:22Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664908+00:00",
+      "analysis": {
+        "id": "6544231356",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Well-documented bug report concerning router fees dropping specific sending leg destination fees."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791111+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544217335",
+      "title": "[뉴스 브리핑] 11/23 북러 밀착 가속화·COP31 결렬·러 선박 피격 등 국제 정세 요동, 국내선 최교진 면직·조희대 탄핵 정국 격화",
+      "description": "**북러 밀착 가속화·COP31 결렬·러 선박 피격 등 국제 정세 요동, 국내선 최교진 면직·조희대 탄핵 정국 격화**\n\n## 🌤 오늘의 날씨\n### 🌧️ 서울\n\n**비**  \n🌡️ 지금 2° · 최저 2° / 최고 12°  \n🔺 어제보다 따뜻함 (최고 +8°, 최저 +6°)  \n☔ 비 예보(강수확률 100%, 약 14.4mm)  \n📅 내일 대체로 맑음 -2°/5°  \n\n### 🌧️ 대구\n\n**약한 이슬비**  \n🌡️ 지금 1° · 최저 0° / 최고 12°  \n🔺 어제보다 따뜻함 (최고 +6°, 최저 +3°)  \n☔ 비 예보(강수확률 88%, 약 0.4mm)  \n📅 내일 흐림 -1°/12°  \n\n### 🌧️ LA (현지 11/22일)\n\n**약한 이슬비**  \n🌡️ 지금 10° · 최저 8° / 최고 20°  \n➖ 어제와 비슷함 (최고 −1°, 최저 +1°)  \n☂️ 강수 가능성 낮음(11%)  \n📅 내일 흐림 9°/20°  \n\n## ☀️ 오늘의 한마디\n> 마음이 복잡하게 얽혀 있어도, 한 줄만 적어도 하루는 움직이기 시작해요. 오늘도 잘 해낼 거예요.  \n> _Even if your feelings are tangled, even one written line gets the day moving. You'll do great today._\n\n## 📌 카테고리별 오늘의 핵심\n**🌍 세계 이슈**  \n북러 관계 밀착 속에 김정은 위원장이 러시아 대사 신임장을 직접 접수하며 의전을 격상했습니다. 리비아 벵가지와 발트해에서 러시아 선박이 드론 공격으로 추정되는 피격을 잇달아 당했고, 러시아는 우크라이나 에너지 시설을 대규모 타격해 전력난을 가중시켰습니다. COP31 기후총회는 화석연료 퇴출 문구를 둘러싼 이견으로 합의문 채택에 최종 실패했고, 이란이 바레인 민간시설을 공습해 역내 긴장이 고조됐으며 멕시코 군이 FBI 10대 수배 마약 카르텔 보스를 체포했습니다.\n\n&nbsp;\n\n**📈 경제·증시**  \n정부가 18년 만의 증안펀드 가동 준비에 착수하고 자사주 매입 한도 완화, 불법 공매도 특별감시 등 시장 안정 조치를 발표했습니다. 미국 반도체지수가 10.7% 폭락하고 나스닥이 코로나 이후 최장 하락을 기록하는 등 AI 거품 붕괴 우려가 확산됐으며, 중국 기술주도 시총 2300조 원이 증발해 당국이 유동성 공급에 나섰습니다. 월가에서 금융위기 확률 40% 경고가 나오는 가운데 수출-코스피 10년 상관관계가 깨졌고, 내년 만기 전세 계약 6.4만 가구가 시세 대비 36% 높은 보증금을 마련해야 하며 자영업자 대출금리 격차는 44개월 만에 최대로 벌어졌습니다. 토스는 캐나다 현지 법인을 설립해 인허가와 제휴를 준비 중입니다.\n\n&nbsp;\n\n**🪙 코인**  \n비트코인이 18억 달러 청산 파동을 소화한 뒤 6만 달러 선을 회복했습니다. 크라켄 거래소에서 비트코인 가격이 1만 7천 달러까지 일시 폭락했다 복구됐으며 거래소는 해킹 흔적이 없다고 밝혔습니다. 양자 컴퓨팅 발전이 비트코인 브리지·커스터디·기존 보유분까지 광범위한 보안 위협을 제기하고 있으며, 체인플립은 1200만 달러 해킹을 인정하고 자금 90% 반환 시 10% 현상금을 제안했습니다.\n\n&nbsp;\n\n**🎨 문화예술**  \n국내에서는 서울시오페라단 단장에 소프라노 김은경이 임명됐고, 구로문화재단·서울시무용단·퓨전국악밴드 차차웅·극단 나루빈 등이 12월 창작뮤지컬과 무용 공연을 선보입니다. 2026 보드게임 페스타가 서울 강남 세텍에서 열려 가족 관람객이 몰렸고, 피아니스트 백건우 첫 자서전이 출간됐으며 제4회 제주 4·3영화제가 개막해 평화·인권 시각으로 전쟁과 차별 문제를 조명합니다. 해외 문화예술 소식은 입력된 항목에 없습니다.\n\n&nbsp;\n\n**🤖 AI**  \n최교진 교육부 장관이 수능 AI 부정행위 대책 발표로 현장 혼란을 초래한 책임으로 사퇴했고 대통령이 즉각 수리했습니다. 올해 수능에서 전자기기 관련 부정행위 111건이 적발돼 정부는 지난해 수능까지 조사를 확대하고 글로벌 AI 기업과 공조해 추적을 이어가기로 했으며, 여론조사에서 수험생·학부모 90%가 수능 신뢰도 하락을 지적해 국가시험 전면 손질론이 제기됐습니다. 오픈AI는 AI 연구 에이전트 자율 완료율이 7개월 만에 23%에서 46%로 두 배 상승했다고 밝혔고, 앤트로픽은 나스닥 상장을 완료했습니다. 구글은 제미나이 API에 도구 검색 프리뷰를 도입하고 검색 홈페이지를 AI 채팅 중심으로 개편했으며, 리만 가설이 AI 도움으로 두 차례 독립 증명돼 공식 검증이 진행 중입니다. 메타 CAIO가 오픈AI 알트먼 딥페이크 영상을 홍보에 활용했으나 정책 위반이 아니라고 주장했습니다.\n\n&nbsp;\n\n**🏛️ 정치·사회**  \n이재명 대통령이 최교진 교육부 장관 면직안을 재가했습니다. 민주당이 조희대 대법원장 탄핵소추를 연내 처리하기로 했으나 당내에서 중도층 역풍과 분열 봉합 의도를 두고 이견이 나오고 있습니다. 국민의힘은 대법원의 12·3 비상계엄 내란 판단에 공식 입장을 내지 않은 채 민주당 탄핵 공세 비판에 집중하고 있습니다. 한국전력에서 개인정보 152만 건이 유출돼 2차 피해 우려가 확산되고 있습니다.\n\n&nbsp;\n\n**🔬 IT·과학**  \nNYT와 블룸버그는 AI가 잠재된 코드 취약점을 자동으로 찾아내 공격에 활용하면서 사이버 보안 비용이 급증하고 공격 속도·규모가 커지고 있다고 경고했습니다. 유엔 자율무기 규제 협상이 러시아 반대로 협상 권한조차 확보하지 못한 채 결렬됐습니다.\n\n&nbsp;\n\n**⚽ 스포츠**  \n한국 남자 쇼트트랙 대표팀이 김태성 주장의 리더십으로 시즌 두 번째 금메달을 획득했습니다. 수원FC가 K리그2 준우승으로 1년 만의 1부 승격을 확정했고 수원 삼성도 동반 승격했습니다.\n\n---\n\n### 🌍 세계 이슈\n\n- **[김정은, 러시아 대사 신임장 직접 접수…30여 년 만의 의전 격상](https://www.yna.co.kr/view/AKR20261122052800079)**  \n  김정은 북한 국무위원장이 안드레이 포드욜리셰프 주북 러시아 대사로부터 신임장을 직접 받으며 북러 관계 밀착을 대외에 과시했다.  \n  _연합뉴스, 경향신문, Yonhap English_\n\n- **[리비아 벵가지 항구 정박 러시아 선박 폭발…드론 공격 추정](https://www.bloomberg.com/news/articles/2026-11-22/eastern-libya-says-blast-on-russian-ship-likely-due-to-attack)**  \n  리비아 동부 벵가지 해군기지에 정박 중이던 러시아 선박에서 폭발이 발생했으며, 리비아 동부 당국은 무인기 공격 가능성을 제기했다.  \n  _연합뉴스, Bloomberg, Daily Mail_\n\n- **[발트해 러시아 화물선 드론 공격받아 화재…핀란드 \"우크라이나 소행 가능성\"](https://www.bbc.co.uk/news/articles/cj752ddve27ko?at_medium=RSS&at_campaign=rss)**  \n  러시아 군 연계 화물선이 발트해에서 우크라이나 드론 공격으로 추정되는 피격을 받아 화재가 발생, 핀란드 국방부는 우크라이나 배후 가능성을 언급했다.  \n  _BBC, The Hill, NBC News_\n\n- **[러시아, 우크라이나 에너지 시설 대규모 타격…전력난 가중](https://www.bloomberg.com/news/articles/2026-11-22/russia-hits-ukrainian-energy-facilities-straining-power-supply)**  \n  러시아 국방부는 우크라이나 발전소와 항만 인프라 등을 타격했다고 밝혔으며, 젤렌스키 대통령은 패트리어트 미사일 인도 지연을 비판했다.  \n  _Bloomberg, Kyiv Independent, Al Jazeera_\n\n- **[COP31 기후총회, 화석연료 이견으로 합의문 채택 최종 실패](https://www.yna.co.kr/view/AKR20261122050451109)**  \n  터키 안탈리아에서 열린 제31차 유엔기후총회가 화석연료 퇴출 문구를 둘러싼 선진국·개도국 대립 끝에 합의문 없이 폐막했다.  \n  _연합뉴스, Al-Monitor, DW_\n\n- **[이란, 바레인 민간시설 공습…바레인 \"범죄적 공격\" 규탄](https://www.yna.co.kr/view/AKR20261122051100079)**  \n  이란 혁명수비대가 바레인 산업시설을 미사일·드론으로 공격해 2명이 부상했으며, 바레인·사우디·카타르가 일제히 규탄했다.  \n  _연합뉴스, Al-Monitor, Middle East Eye_\n\n- **[멕시코 군, FBI 10대 수배 마약 카르텔 보스 '엘 차포 이시드로' 체포](https://www.theguardian.com/world/2026/nov/21/alleged-mexican-drug-cartel-boss-el-chapo-isidro-meza-flores-arrested)**  \n  멕시코 특수부대가 마약 밀매·고문 혐의로 FBI 10대 지명수배자였던 파우스토 이시드로 메사 플로레스를 교전 끝에 체포했다.  \n  _The Guardian, BBC, NYT_\n\n&nbsp;\n\n### 📈 경제·증시\n\n- **[정부, 18년 만의 증안펀드 가동 준비 착수…자사주 매입 한도 완화·불법 공매도 특별감시](https://www.yna.co.kr/view/AKR20261122044351002)**  \n  글로벌 증시 급락에 대응해 경제·금융 수장들이 증안펀드 즉시 가동 준비에 돌입하고 상장사 자사주 매입 한도 3개월 한시 완화, 불법 공매도 집중 감시 등 시장 안정 조치를 발표했다.  \n  _연합뉴스, 한국경제, 매일경제_\n\n- **[미국 반도체지수 10.7% 폭락…AI 거품 붕괴 우려에 나스닥 코로나 이후 최장 하락](https://www.mk.co.kr/news/stock/12215714)**  \n  AI 투자 과열에 대한 경계론이 확산되며 필라델피아 반도체지수가 10% 이상 급락하고 나스닥이 고점 대비 10% 하락해 조정 국면에 진입했다.  \n  _매일경제, 한국경제_\n\n- **[중국 기술주 시총 2300조 원 증발…딥시크發 AI 열풍 꺼지며 당국 유동성 공급 나서]",
+      "url": "https://github.com/nikkikim/claude1/issues/34",
+      "repository": "https://api.github.com/repos/nikkikim/claude1",
+      "created_at": "2026-11-22T15:32:01Z",
+      "updated_at": "2026-11-22T15:32:02Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664910+00:00",
+      "analysis": {
+        "id": "6544217335",
+        "score": 1,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "General news briefing issue, completely unsuitable for technical execution."
+      },
+      "score": 1,
+      "analyzed_at": "2026-11-22T15:54:27.791112+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544217156",
+      "title": "[Bug bounty] buildOriginInfo reports native fee asset as sufficient below existential deposit (re-report of #2593)",
+      "description": "> Note: this is a re-report of #2593, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the public XCM API. One claim from the closed report is corrected here: `selectedCurrency.sufficient` is not false in the dust case (it does not subtract the fee, and its balanceAfter stays above the ED); the wrong flag is `xcmFee.sufficient`, which is true while its own `balanceAfter` is below the ED.\n\n# Bug Report\n\n## Describe the Bug\n\n`buildOriginInfo` (`packages/sdk-core/src/transfer/transfer-info/buildOriginInfo.ts`) reports the origin XCM fee as sufficient when the remaining native fee-asset balance is below the existential deposit.\n\n```ts\nconst remaining = originBalanceFeeAfter + (isNativeFeeAsset ? ed : 0n)\nsufficient: transferredFeeAsset\n  ? remaining === 0n || remaining >= ed\n  : originBalanceFee >= originFee\n```\n\nFor a native fee asset, adding the existential deposit before comparing against the existential deposit shifts the check: `remaining >= ed` is equivalent to `balanceAfter >= 0`, so any non-negative remainder passes, including dust below the ED. A remainder of exactly `-ED` also passes, because `remaining` becomes `0`. The correct check on the balance after the transfer is `balanceAfter === 0n || balanceAfter >= ed` — the same rule the sibling `selectedCurrency` check already applies (`balanceAfter >= BigInt(asset.existentialDeposit)`).\n\n## To Reproduce\n\nTwo read-only calls to the public XCM API. No transaction is submitted and nothing is signed. The sender is my own address, `1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g`, on AssetHubPolkadot; the destination is Hydration; the currency is native DOT (decimals 10, AssetHubPolkadot native ED 100,000,000 planck = 0.01 DOT).\n\n1. Probe call with a small amount, to learn the fee and the balance from the response:\n\n```bash\ncurl -X POST \"https://api.paraspell.xyz/v2/transfer-info\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\":\"AssetHubPolkadot\",\"to\":\"Hydration\",\n       \"currency\":{\"symbol\":{\"type\":\"Native\",\"value\":\"DOT\"},\"amount\":\"0.1\"},\n       \"sender\":\"1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g\",\n       \"recipient\":\"1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g\"}'\n```\n\nObserved (run 2026-11-22 ~14:13 UTC): `origin.xcmFee.fee` 315,298,577, `origin.xcmFee.balance` 15,913,570,677.\n\n2. Main call. Derive the amount from the probe response's own numbers so the remainder lands below the ED:\n\n`amount = balance - fee - 50,000,000`\n`= 15,913,570,677 - 315,298,577 - 50,000,000`\n`= 15,548,272,100 planck = 1.55482721 DOT`\n\nNote: the API takes `amount` in decimal DOT, not planck — passing `\"1000000000\"` would be read as 1,000,000,000 DOT.\n\n```bash\ncurl -X POST \"https://api.paraspell.xyz/v2/transfer-info\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"from\":\"AssetHubPolkadot\",\"to\":\"Hydration\",\n       \"currency\":{\"symbol\":{\"type\":\"Native\",\"value\":\"DOT\"},\"amount\":\"1.55482721\"},\n       \"sender\":\"1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g\",\n       \"recipient\":\"1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g\"}'\n```\n\nObserved result (run 2026-11-22 ~14:14 UTC):\n\n```json\n{ \"origin\": {\n    \"selectedCurrency\": { \"sufficient\": true, \"balance\": \"15913570677\",\n                          \"balanceAfter\": \"365298577\" },\n    \"xcmFee\": { \"sufficient\": true, \"fee\": \"315598577\",\n                \"balance\": \"15913570677\", \"balanceAfter\": \"49700000\",\n                \"asset\": { \"symbol\": \"DOT\",\n                           \"existentialDeposit\": \"100000000\" } } } }\n```\n\nThe fee moved slightly between the probe and the main call (315,298,577 -> 315,598,577), so `balanceAfter` landed at 49,700,000 instead of exactly 50,000,000 — still below the 100,000,000 ED.\n\nExpected: `origin.xcmFee.sufficient` is `false`, because `balanceAfter` 49,700,000 is below the existential deposit 100,000,000.\nActual: `origin.xcmFee.sufficient` is `true`.\n\n## Environment\n\n- OS: Linux\n- Framework: XCM API (live, https://api.paraspell.xyz/v2)\n- XCM Tool version: live XCM API, run 2026-11-22 ~14:13-14:14 UTC (the code path matches `packages/sdk-core/src/transfer/transfer-info/buildOriginInfo.ts` on main as of 2026-11-22)\n- NodeJS version: n/a (server-side)\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 ~14:13-14:14 UTC (read-only transfer-info queries, no transaction submitted, nothing signed):\n\n```\nProbe (0.1 DOT, AssetHubPolkadot -> Hydration):\n  origin.xcmFee: sufficient true, fee 315298577,\n    balance 15913570677, balanceAfter 14598272100\n\nMain (1.55482721 DOT = balance - fee - 50000000 dust):\n  origin.selectedCurrency: sufficient true,\n    balance 15913570677, balanceAfter 365298577\n  origin.xcmFee: sufficient true, fee 315598577,\n    balance 15913570677, balanceAfter 49700000,\n    asset DOT, existentialDeposit 100000000\n\nbalanceAfter 49700000 < existentialDeposit 100000000,\nyet xcmFee.sufficient is true.\n```\n\n## Expected Behavior\n\n`origin.xcmFee.sufficient` is `false` when the",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2623",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:32:00Z",
+      "updated_at": "2026-11-22T15:32:00Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664911+00:00",
+      "analysis": {
+        "id": "6544217156",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Clear logic bug report regarding fee sufficiency checks relative to existential deposits."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791114+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544204906",
+      "title": "[Bug bounty] computeAllFees uses destination fee without checking its asset, native-denominated fee spent as fee-asset units (re-report of #2607)",
+      "description": "> Note: this is a re-report of #2607, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live against the chains through the public Builder interface.\n\n# Bug Report\n\n## Describe the Bug\n\n`computeAllFees` uses the destination fee without checking which asset it is denominated in, so a native-denominated fee is spent as units of the fee asset.\n\nIn `packages/sdk-core/src/transfer/type-and-then/computeFees.ts`, `sumHopFees` filters hop fees by asset equality (lines 25-30), but `destFee = result.destination.fee` (line 71) has no asset check at all. `createTypeAndThenCall` then funds `BuyExecution` with `hopFees + destFee` in fee-asset units (`packages/sdk-core/src/transfer/type-and-then/createCustomXcm.ts`).\n\nIn the `getXcmFeeOnce` fallback branches (`packages/sdk-core/src/transfer/fees/getXcmFeeOnce.ts`, around lines 86-124 and 281-289), the destination fee is native-denominated and its asset is forced to the destination native asset (`asset: api.findNativeAssetInfoOrThrow(destination)`). Those branches run when the origin dry run fails or the origin fee type is `paymentInfo`. `computeAllFees` then treats that native-denominated number as if it were denominated in the fee asset.\n\n## To Reproduce\n\nPrerequisite: a sender on AssetHubPolkadot that holds USDT (asset id 1984) but no DOT, so the origin dry run fails. The sender below is a real public account, verified on-chain on 2026-11-22 (USDT (id 1984) 1,000,510, DOT free 0). No transaction is submitted and nothing is signed; this is read-only fee estimation and transaction construction.\n\n```ts\nimport { Builder } from '@paraspell/sdk-pjs' // version 14.5.3\nimport { Native } from '@paraspell/assets'\n\nconst fee = await Builder()\n  .from('AssetHubPolkadot')\n  .to('Hydration')\n  .currency({ symbol: Native('DOT'), amount: 10000000000n }) // 1 DOT\n  .feeAsset({ id: '1984' }) // USDT on AssetHub\n  .sender('135xCmWABfu3LSo9b1xSjcx27GdMHD2UbomYDSFVY4rQbBrt')\n  .recipient('5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D')\n  .getXcmFee()\n\nconst tx = await Builder()\n  .from('AssetHubPolkadot')\n  .to('Hydration')\n  .currency({ symbol: Native('DOT'), amount: 10000000000n }) // 1 DOT\n  .feeAsset({ id: '1984' }) // USDT on AssetHub\n  .sender('135xCmWABfu3LSo9b1xSjcx27GdMHD2UbomYDSFVY4rQbBrt')\n  .recipient('5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D')\n  .build()\n```\n\n**Observed result (run 2026-11-22, AssetHubPolkadot specVersion 2005003, Hydration specVersion 458):** `getXcmFee()` returns `success: false`. The origin dry run fails with `LocalExecutionIncompleteWithError / FailedToTransactAsset` at instruction 0 (the sender holds no DOT), and the destination comes back as `{ fee: \"15193966112520\", feeType: \"paymentInfo\", asset: HDX (native of Hydration, 12 decimals) }` — a native-denominated fee, not the fee asset USDT.\n\n`build()` succeeds and returns a `polkadotXcm.execute` whose `BuyExecution` spends **1,128,000,626 units of USDT** (location `PalletInstance: 50, GeneralIndex: 1984`) — that is 1,128 USDT. The nested destination-leg `BuyExecution` in the same message is only 604 units of USDT.\n\nExpected: the built transaction funds the destination execution with a fee denominated in USDT, of the same order as the 432 USDT units the SDK quotes for the destination fee when the origin dry run succeeds (see control below).\nActual: it funds `BuyExecution` with 1,128,000,626 USDT units — a native-denominated number spent as USDT units, about 2.6 million times the correctly priced destination fee.\n\nControl: the same transfer with a funded sender (`15zjbdyyCLiWJCG31r3L1VRZtVV75oLRKsByX1C5a9oBeAnZ`, DOT free 99,820,000,000, USDT (id 1984) 90,000,001,000) returns `success: true` and `destination: { fee: \"432\", feeType: \"dryRun\", asset: USDT (id 10) }` — correctly denominated in USDT. The mismatch appears exactly when the fallback branch runs.\n\nNote: fallback fees use `paymentInfo`, whose value depends on the exact extrinsic priced, so the native-denominated figure varies between runs. The unit mismatch does not vary: in every fallback run the destination fee is native-denominated and is spent as fee-asset units.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk-pjs 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 ~14:20-14:22 UTC (read-only fee estimation and transaction construction, no transaction submitted, nothing signed):\n\n```\ngetXcmFee() (USDT-only sender):\n  success: false\n  origin: fee 580892520, feeType paymentInfo, asset USDT (id 1984)\n    dryRunError: LocalExecutionIncompleteWithError /\n      FailedToTransactAsset, instructionIndex 0\n  destination: fee 15193966112520, feeType paymentInfo, asset HDX (native)\n\nbuild() (same transfer):\n  WithdrawAsset: USDT 1128000626 units + DOT 10000000000\n  BuyExecution fees: USDT 1128000626 units\n  nested destination-leg BuyExecution fees: USDT 604 units\n\ngetXcm",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2622",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:30:48Z",
+      "updated_at": "2026-11-22T15:30:48Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664913+00:00",
+      "analysis": {
+        "id": "6544204906",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Bug report outlining an issue with fee denomination handling across cross-chain transfers."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791115+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544193663",
+      "title": "[Bug bounty] findAssetInfoByLoc string branch never canonicalizes, JSON locations miss (re-report of #2597)",
+      "description": "> Note: this is a re-report of #2597, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the public `findAssetInfo` function. The examples in the closed #2597 were wrong (ETH is not at X1 Parachain 2006 on AssetHubPolkadot, and DOT on Polkadot has `parents: 1`, not `parents: 0`); the examples below were re-verified against the real asset registry.\n\n# Bug Report\n\n## Describe the Bug\n\n`findAssetInfoByLoc` treats the same location differently depending on whether it arrives as an object or as a string. The object branch canonicalizes before comparing (V3 `X1`-object to V5 `X1`-array, `'Here'` to `{ Here: null }`, key order and bigint differences ignored). The string branch does none of that: it compares the raw string against `JSON.stringify(asset.location)`.\n\nFile: `packages/assets/src/assets/search/findAssetInfoByLoc.ts`\n\n```ts\nif (typeof location === 'string') {\n  return foreignAssets.find(asset => compareLocations(location, asset)) // raw string compare\n}\n\nconst normalizedLocation = canonicalizeLocation(location)\nreturn foreignAssets.find(\n  asset => asset.location && deepEqual(normalizedLocation, canonicalizeLocation(asset.location))\n)\n```\n\nA string location is a first-class public input: `TLocationValue = string | TLocation`, so `Builder().currency({ location: '...' })`, `findAssetInfo`, `findAssetInfoOnDest`, and swap asset resolution all accept it. It is the natural form for JSON configs, API responses, and serialized registry data. The same location that resolves as an object silently returns `null` as a string, with no error and no way to distinguish \"asset does not exist\" from \"same location, serialized differently\".\n\n## To Reproduce\n\n```ts\nimport { findAssetInfo } from '@paraspell/assets' // version 14.5.3\n\n// 1. V3 X1-object form — UNQ on Acala, stored location\n//    { parents: 1, interior: { X1: [{ Parachain: 2037 }] } }\nfindAssetInfo('Acala', { location: { parents: 1, interior: { X1: { Parachain: 2037 } } } })\nfindAssetInfo('Acala', { location: '{\"parents\":1,\"interior\":{\"X1\":{\"Parachain\":2037}}}' })\n\n// 2. 'Here' shorthand — DOT on Polkadot, stored location\n//    { parents: 1, interior: { Here: null } }\nfindAssetInfo('Polkadot', { location: { parents: 1, interior: 'Here' } })\nfindAssetInfo('Polkadot', { location: '{\"parents\":1,\"interior\":\"Here\"}' })\n\n// 3. Reordered keys — ETH on AssetHubPolkadot, stored location\n//    { parents: 1, interior: { X3: [{ Parachain: 1000 }, { PalletInstance: 50 }, { GeneralIndex: 20090105 }] } }\nfindAssetInfo('AssetHubPolkadot', { location: '{\"parents\":1,\"interior\":{\"X3\":[{\"Parachain\":1000},{\"PalletInstance\":50},{\"GeneralIndex\":20090105}]}}' })\nfindAssetInfo('AssetHubPolkadot', { location: '{\"interior\":{\"X3\":[{\"Parachain\":1000},{\"PalletInstance\":50},{\"GeneralIndex\":20090105}]},\"parents\":1}' })\nfindAssetInfo('AssetHubPolkadot', { location: { interior: { X3: [{ Parachain: 1000 }, { PalletInstance: 50 }, { GeneralIndex: 20090105 }] }, parents: 1 } })\n```\n\n**Observed result (run 2026-11-22, Node.js v24.22.1, Linux, `@paraspell/assets` 14.5.3):**\n\n```\nUNQ Acala object V3 X1-object  => UNQ (assetId 10)\nUNQ Acala string V3 X1-object  => null\nDOT Polkadot object interior \"Here\" => DOT\nDOT Polkadot string interior \"Here\" => null\nETH AssetHubPolkadot canonical string       => ETH (assetId 20090105)\nETH AssetHubPolkadot reordered-keys string  => null\nETH AssetHubPolkadot reordered-keys object  => ETH (assetId 20090105)\n```\n\nThe canonical string works (control), so the string branch is not broken outright — it only misses the non-canonical serializations that the object branch handles.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/assets 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (local Node script, no network, no transaction):\n\n```\nUNQ Acala object V3 X1-object => UNQ (assetId 10)\nUNQ Acala string V3 X1-object => null\nDOT Polkadot object interior \"Here\" => DOT (assetId native)\nDOT Polkadot string interior \"Here\" => null\nETH AssetHubPolkadot canonical string => ETH (assetId 20090105)\nETH AssetHubPolkadot reordered-keys string => null\nETH AssetHubPolkadot reordered-keys object => ETH (assetId 20090105)\n```\n\n## Expected Behavior\n\nEach string form returns the same asset as the equivalent object form: UNQ for the V3 string, DOT for the `'Here'` string, ETH for the reordered-keys string.\n\n## Additional Context\n\nSuggested fix: in the string branch, parse and canonicalize before comparing, falling back to the current raw comparison when the string is not JSON:\n\n```ts\nif (typeof location === 'string') {\n  try {\n    const parsed = JSON.parse(location)\n    return foreignAssets.find(asset => asset.location && deepEqual(canonicalizeLocation(parsed), canonicalizeLocation(asset.location)))\n  } catch {\n    return foreignAssets.find(asset => compareLocations(location, asset))\n  }\n}\n```\n\nPrevious re",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2621",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:29:43Z",
+      "updated_at": "2026-11-22T15:29:43Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664914+00:00",
+      "analysis": {
+        "id": "6544193663",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Targeted bug report detailing missing canonicalization in location string lookups."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791117+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544184366",
+      "title": "[Bug bounty] validateTransact returns ValidationError instead of throwing, sender check is dead (re-report of #2594)",
+      "description": "> Note: this is a re-report of #2594, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the public Builder interface.\n\n# Bug Report\n\n## Describe the Bug\n\n`validateTransact` returns a `ValidationError` instead of throwing it, so its sender check never runs. The last check in the function is the only one written as a `return`:\n\nFile: `packages/sdk-core/src/transfer/utils/validationUtils.ts`\n\n```ts\nif (typeof address === 'string' && sender && !compareAddresses(api, address, sender)) {\n  return new ValidationError(\n    'Sender address must match the destination address for transact to work.'\n  )\n}\n```\n\nEvery other check in the same function throws (`UnsupportedOperationError`, `ValidationError` for a non-hex call). The caller ignores the return value:\n\nFile: `packages/sdk-core/src/transfer/createTransfer.ts`\n\n```ts\nvalidateDestination(origin, destination, api)\nvalidateTransact(options) // return value ignored\n```\n\nSo a transact transfer whose recipient differs from its sender passes validation and is built, even though the SDK's own rule says the sender must match the destination address for transact to work.\n\n## To Reproduce\n\n```ts\nimport { ApiPromise, HttpProvider } from '@polkadot/api'\nimport { Builder } from '@paraspell/sdk-pjs' // version 14.5.3\n\nconst hydApi = await ApiPromise.create({ provider: new HttpProvider('https://rpc.hydradx.cloud') })\nconst ahApi = await ApiPromise.create({ provider: new HttpProvider('https://polkadot-asset-hub-rpc.polkadot.io') })\n\n// system.remark('paraspell-2594-repro') built on AssetHubPolkadot\nconst callHex = '0x6004000050706172617370656c6c2d323539342d726570726f'\n\nconst tx = await Builder({ apiOverrides: { Hydration: hydApi, AssetHubPolkadot: ahApi } })\n  .from('Hydration')\n  .to('AssetHubPolkadot')\n  .currency({ id: '10', amount: 100000000n }) // 100 USDT (id 10)\n  .sender('5DdcCSE2VwY6P6fDVfCN9FAvABv2ka417GiWnYUpe9ZcNE5D')\n  .recipient('1HPCqzjFY3a8Kx2dZS6rvmeMqpJ68GTbnchwqpbVizWAN6g') // a different address\n  .transact(callHex)\n  .build()\n```\n\nNo transaction is submitted and nothing is signed; `.build()` only builds the extrinsic.\n\n**Observed result (run 2026-11-22, Node.js v24.22.1, Linux, `@paraspell/sdk-pjs` 14.5.3, Hydration specVersion 458, AssetHubPolkadot specVersion 2005003):** `.build()` SUCCEEDED and returned a `polkadotXcm` execute extrinsic (callIndex `0x6b03`). `.getXcmFee()` on the same mismatched transfer also returned a result instead of throwing (`origin.fee: 408`). Control with sender equal to recipient returned the same fee (`origin.fee: 408`): the mismatch changes nothing, the check is dead.\n\nTwo notes on the exact values: the currency must be `{ id: '10' }`, not `{ symbol: 'USDT' }` — the symbol is ambiguous on Hydration and the SDK throws `DuplicateAssetError` before reaching the bug (aliases USDT1 id 10, USDT2 id 1000767, USDT3 id 23). An earlier run with currency HDX hit an unrelated chain rejection (`DryRunFailedError`, Hydration rejects the HDX teleport to AssetHubPolkadot, `UntrustedTeleportLocation` at instruction 2) in both the mismatched and the control run; the USDT route above avoids it and isolates the validation bug.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk-pjs 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (read-only, no transaction submitted, nothing signed):\n\n```\nMAIN getXcmFee, sender != recipient ...\nMAIN getXcmFee RESULT: returned (no ValidationError). success: false origin.fee: 408\nMAIN build, sender != recipient ...\nMAIN build RESULT: SUCCEEDED. method: {\"callIndex\":\"0x6b03\",\"args\":{\"message\":{\"v5\":[{\"withdrawAsset\":...\nCONTROL getXcmFee, sender == recipient ...\nCONTROL getXcmFee RESULT: success: false origin.fee: 408\n```\n\n## Expected Behavior\n\n`.build()` (and `.getXcmFee()`) throws `ValidationError: Sender address must match the destination address for transact to work.` when the recipient differs from the sender on a transact transfer, the same way the other checks in `validateTransact` throw.\n\n## Additional Context\n\nSuggested fix (one word, in `validationUtils.ts`):\n\n```ts\nif (typeof address === 'string' && sender && !compareAddresses(api, address, sender)) {\n  throw new ValidationError(\n    'Sender address must match the destination address for transact to work.'\n  )\n}\n```\n\nThe check exists because the destination chain executes the transact call under the sender's account; building the transfer with a different recipient silently produces an extrinsic the SDK itself considers invalid, which the user can then submit. The repo's own test codifies the bug: `packages/sdk-core/src/transfer/utils/validationUtils.test.ts:452`, \"returns ValidationError if sender does not match destination\", asserts the return value instead of a throw. Previous report: #2594 (closed for template non-compliance, bug not evaluated).\n\n---\n\n## Contributo",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2620",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:28:47Z",
+      "updated_at": "2026-11-22T15:28:47Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664916+00:00",
+      "analysis": {
+        "id": "6544184366",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Simple validation bug fix where a validation error is returned instead of thrown."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791119+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544172615",
+      "title": "[Bug bounty] findEthAssetBySymbol silently picks the first of two distinct XRT contracts on Ethereum instead of throwing a duplicate error (re-report of #2613)",
+      "description": "> Note: this is a re-report of #2613, which was closed for not following the bug bounty template. The bug itself was not evaluated. This report follows the template and reproduces the bug live through the documented public function `findAssetInfo`.\n\n# Bug Report\n\n## Describe the Bug\n\nEthereum has two different XRT tokens registered in `packages/assets/src/maps/assets.json`, two distinct contracts:\n\n- `0x7de91b204c1c737bcee6f000aaa6569cf7061cb7` (alias XRT2)\n- `0x1f752250f518e419f2f03804e25728c5c6dff73f` (alias XRT1)\n\nEvery other symbol path in `packages/assets/src/assets/search/findAssetInfoBySymbol.ts` guards against this: when more than one asset matches a symbol it throws `DuplicateAssetError` and tells the caller to use the `ForeignAbstract()` selector with the alias. The Ethereum-specific path does not. `findEthAssetBySymbol` filters the assets to the Ethereum GlobalConsensus entries and returns `findBestMatches(...)[0]` with no duplicate check, and `findEthMatch` returns that result directly. That path is taken whenever the destination is an external chain (Ethereum) or the symbol ends with `.e` — exactly the lookups used for transfers to Ethereum and for Snowbridge assets.\n\n## To Reproduce\n\n```ts\nimport { findAssetInfo, getAssetsObject } from '@paraspell/sdk' // version 14.5.3\n\n// The registry really has two distinct XRT contracts on Ethereum:\ngetAssetsObject('Ethereum').assets\n  .filter(a => a.symbol === 'XRT')\n  .map(a => ({ assetId: a.assetId, alias: a.alias }))\n// => [{ assetId: '0x7de91b204c1c737bcee6f000aaa6569cf7061cb7', alias: 'XRT2' },\n//     { assetId: '0x1f752250f518e419f2f03804e25728c5c6dff73f', alias: 'XRT1' }]\n\n// Destination is Ethereum: silently returns the first contract\nfindAssetInfo('Ethereum', { symbol: 'XRT' }, 'Ethereum')\n\n// Snowbridge '.e' symbol: silently returns the first contract\nfindAssetInfo('Ethereum', { symbol: 'XRT.e' })\n```\n\n**Observed result (run 2026-11-22, `@paraspell/sdk` 14.5.3, Node.js v24.22.1):** both calls return the same asset with no error and no warning:\n\n```json\n{ \"symbol\": \"XRT\",\n  \"assetId\": \"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\",\n  \"decimals\": 9, \"existentialDeposit\": \"1\",\n  \"location\": { \"parents\": 2, \"interior\": { \"X2\": [\n    { \"GlobalConsensus\": { \"Ethereum\": { \"chainId\": 1 } } },\n    { \"AccountKey20\": { \"network\": null,\n      \"key\": \"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\" } } ] } },\n  \"alias\": \"XRT2\" }\n```\n\nThe second contract (`0x1f752250f518e419f2f03804e25728c5c6dff73f`, alias XRT1) is never surfaced.\n\nControl — the plain symbol path on the same chain, same symbol, throws as it should:\n\n```\nfindAssetInfo('Ethereum', { symbol: 'XRT' })\n=> THROWS: DuplicateAssetError: Multiple foreign assets found for symbol XRT. Please specify with ForeignAbstract() selector. Available aliases: XRT2 (ID:0x7de91b204c1c737bcee6f000aaa6569cf7061cb7), XRT1 (ID:0x1f752250f518e419f2f03804e25728c5c6dff73f)\n```\n\nSo the codebase already knows this symbol is ambiguous and already has the guard and the disambiguation mechanism (the XRT1/XRT2 aliases) — the Ethereum path just skips the guard.\n\n## Environment\n\n- OS: Linux\n- Framework: Node.js v24.22.1\n- XCM Tool version: @paraspell/sdk 14.5.3\n- NodeJS version: v24.22.1\n\n## Screenshots / Logs\n\nLive run output, 2026-11-22 (registry lookup only, no chain connection, no transaction):\n\n```\nEthereum XRT entries: [{\"assetId\":\"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\",\"alias\":\"XRT2\"},{\"assetId\":\"0x1f752250f518e419f2f03804e25728c5c6dff73f\",\"alias\":\"XRT1\"}]\nfindAssetInfo('Ethereum', {symbol:'XRT'}, 'Ethereum') => OK: {\"symbol\":\"XRT\",\"assetId\":\"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\",...,\"alias\":\"XRT2\"}\nfindAssetInfo('Ethereum', {symbol:'XRT.e'}) => OK: {\"symbol\":\"XRT\",\"assetId\":\"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\",...,\"alias\":\"XRT2\"}\nfindAssetInfo('Ethereum', {symbol:'XRT'}) [control: plain path] => THROWS: DuplicateAssetError: Multiple foreign assets found for symbol XRT. Please specify with ForeignAbstract() selector. Available aliases: XRT2 (ID:0x7de91b204c1c737bcee6f000aaa6569cf7061cb7), XRT1 (ID:0x1f752250f518e419f2f03804e25728c5c6dff73f)\nfindAssetInfo('Ethereum', {symbol:'XRT.e'}, 'Ethereum') => OK: {\"symbol\":\"XRT\",\"assetId\":\"0x7de91b204c1c737bcee6f000aaa6569cf7061cb7\",...,\"alias\":\"XRT2\"}\n```\n\n## Expected Behavior\n\nThe Ethereum paths throw the same `DuplicateAssetError` as the plain symbol path, naming both aliases (XRT2 and XRT1) so the caller can disambiguate with `ForeignAbstract('XRT1')` or `ForeignAbstract('XRT2')` — instead of silently returning whichever contract happens to be listed first.\n\n## Additional Context\n\nSuggested fix: apply the duplicate guard in `findEthAssetBySymbol` (`packages/assets/src/assets/search/findAssetInfoBySymbol.ts:13-24`), the same `throwDuplicateAssetError` the other paths already use. This is the same class of bug as #2236 (plain-symbol `.e` lookups skipping the duplicate guard), which was confirmed.\n\nImpact: a user moving XRT to or from Ethereum through the `.e` symbol o",
+      "url": "https://github.com/paraspell/xcm-tools/issues/2619",
+      "repository": "https://api.github.com/repos/paraspell/xcm-tools",
+      "created_at": "2026-11-22T15:27:37Z",
+      "updated_at": "2026-11-22T15:27:37Z",
+      "labels": [
+        "Bug bounty 💰"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664917+00:00",
+      "analysis": {
+        "id": "6544172615",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Bug report on silent failure/ambiguity when encountering duplicate token contracts on Ethereum."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791121+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544139971",
+      "title": "[bounty] lsp-hover-signatures",
+      "description": "Claiming this one. Planned shape:\n\n- index `stdlib/*.ltl` when the LSP starts: parse `pub fn` signatures and the `///` line directly above each declaration;\n- `textDocument/hover` returns the fenced signature, that first doc line, and the module it came from;\n- no extra data files, the index is built from the bundled stdlib.\n\nI'll extend `tests/test_lsp_server.py` with hover cases (documented stdlib fn, unknown identifier still returns null, builtins keep precedence), sign off the commit, and open the PR against `main` linking this issue.\n\nPayout via Lightning works on my side whenever it's reviewed.",
+      "url": "https://github.com/bad-antics/lateralus-lang/issues/665",
+      "repository": "https://api.github.com/repos/bad-antics/lateralus-lang",
+      "created_at": "2026-11-22T15:24:28Z",
+      "updated_at": "2026-11-22T15:24:28Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664919+00:00",
+      "analysis": {
+        "id": "6544139971",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Clear feature implementation task for language server hover signatures with defined testing plans."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791123+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544130800",
+      "title": "[bounty] stdlib.influx_line tutorial: InfluxDB line protocol serialization and parsing",
+      "description": "## Bounty Claim: stdlib.influx_line tutorial ($25 USD)\n\nClaiming the recurring `$25` stdlib module tutorial bounty from `BOUNTIES.md` for `stdlib/influx_line.ltl`.\n\n### Scope of Delivery\n1. **Authoritative Guide (`docs/blog/stdlib-influx-line-tutorial.md`)**:\n   - Comprehensive explanation of the InfluxDB Line Protocol specification: measurement name, tag set (key-value pairs for indexing), field set (typed metrics), and optional nanosecond UNIX timestamp.\n   - Escaping mechanics (`escape_measurement`, `escape_ident`, `escape_string_field`) and strict character sanitization rules (spaces, commas, equals signs, quotes).\n   - Typed field encoding: `field_string`, `field_int` (with trailing `i`), `field_float`, and `field_bool`.\n   - Single-pass streaming tokenizer and line builder (`influx_line.line`).\n   - Line parsing and unescaping engine (`influx_line.parse_line`).\n\n2. **Runnable Companion Example (`examples/influx_line_tutorial.ltl`)**:\n   - Practical time-series telemetry exporter (CPU, memory, sensor metrics) demonstrating tag sorting, typed fields, and nanosecond timestamping.\n   - Roundtrip demonstration parsing back emitted lines into structured maps.\n\n3. **Pinned Test Vector Suite (`tests/stdlib_influx_line_tutorial.ltl`)**:\n   - Comprehensive `@test` blocks verifying:\n     - Exact line encoding matches against official InfluxDB line protocol test vectors.\n     - Escaped identifiers (commas in tags, spaces in measurements, quotes in strings).\n     - Field value formatting (integers `123i`, booleans `true`/`false`, floats, quoted strings).\n     - Parser roundtrips with and without timestamps, plus error resilience on malformed records.\n\n### Settlement Details\n- **Settlement Rail**: Base L2 / EVM (USDC)\n- **Settlement Wallet**: `0x8366bCe3a2D379De7656D7A67015789FaF999f20`\n",
+      "url": "https://github.com/bad-antics/lateralus-lang/issues/664",
+      "repository": "https://api.github.com/repos/bad-antics/lateralus-lang",
+      "created_at": "2026-11-22T15:23:36Z",
+      "updated_at": "2026-11-22T15:23:36Z",
+      "labels": [],
+      "source": "GitHub",
+      "status": "WAITING_APPROVAL",
+      "created_in_system": "2026-11-22T15:51:38.664920+00:00",
+      "analysis": {
+        "id": "6544130800",
+        "score": 9,
+        "reward_estimate": 25,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Well-scoped tutorial writing and companion example implementation bounty with confirmed $25 reward."
+      },
+      "score": 9,
+      "analyzed_at": "2026-11-22T15:54:27.791124+00:00",
+      "analysis_model": "gemini-3.5-flash-lite",
+      "selected_at": "2026-11-22T15:54:27.794565+00:00",
+      "execution": {
+        "status": "NOT_STARTED",
+        "executor": null,
+        "task_id": null,
+        "result": null,
+        "submitted": false
+      }
+    },
+    {
+      "id": "6544388011",
+      "title": "BE-104 Full-text mission search with filters and ranking",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\n`GET /api/missions` lists missions with basic query params (`list-missions-query.dto.ts`). Hunters need real search across title, description and tags, with filters for reward token, reward range, status, network and whether a mission needs Proof-of-Test.\n\n## User Story\n**As a** hunter,  \n**I want to** search missions by keyword and filter by reward,  \n**so that** I find work that fits my skills fast.\n\n## Requirements and Context\n- Files: `backend/src/missions/dto/list-missions-query.dto.ts`, `backend/src/missions/missions.service.ts`, `backend/prisma/migrations/** (raw SQL for tsvector)`, `backend/src/missions/missions.search.spec.ts (new)`\n- Add a generated `tsvector` column on missions (title weight A, description B, tags C) with a GIN index, via a raw SQL migration. Prisma uses `Unsupported(\"tsvector\")`.\n- Query params: `q`, `token`, `minReward`, `maxReward`, `status`, `network`, `requiresProof`, `tags[]` and `sort` (relevance, newest, reward).\n- Rank by `ts_rank_cd` when `q` is set. Paginate with cursors (BE-105 pattern, or offset with a TODO if BE-105 hasn't landed).\n- Validate every param with class-validator, and keep `forbidNonWhitelisted`.\n\n## Suggested Implementation\n```ts\n// IN FILES: backend/src/missions/dto/list-missions-query.dto.ts, backend/src/missions/missions.service.ts, backend/prisma/migrations/** (raw SQL for tsvector), backend/src/missions/missions.search.spec.ts\n// 1. Write the migration with the generated column and index.\n// 2. Extend the DTO.\n// 3. Write the query with $queryRaw tagged templates (never string-concatenated SQL).\n// 4. Write specs against a Postgres test DB (Testcontainers, or the CI service).\n```\n\n## Acceptance Criteria\n- [ ] SQL injection attempts in `q` are handled safely, with a spec.\n- [ ] Results for a fixture dataset match the expected order for each sort.\n- [ ] Jest specs cover the happy path and every error branch listed above. `npm run lint`, `npm test` and `npm run build` pass.\n- [ ] New env vars are in `backend/.env.example`. New tables ship with a Prisma migration.\n\n## Submission Guidelines\n- **Branch:** `backend/be-104-full-text-mission-search-with-filters`\n- **Depends on:** `none`\n- **PR:** `feat(backend): add full-text mission search`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/420",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:48:09Z",
+      "updated_at": "2026-11-22T15:48:09Z",
+      "labels": [
+        "backend",
+        "api",
+        "missions",
+        "complexity:high",
+        "search"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664922+00:00",
+      "analysis": {
+        "id": "6544388011",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Backend search feature implementation requiring raw SQL migration for tsvector and comprehensive query parameters."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791126+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544377063",
+      "title": "SC-008 Harden payout_participant ordering against hostile tokens",
+      "description": "<!-- ghit#filepath: batch-1-issues.md -->\n\n## Description\n`payout_participant` transfers the reward, forwards a fee to `quid-fee-collector`, releases stake and calls `quid-reputation`. If a reward token or linked contract misbehaves, the order of state writes and external calls matters. Apply checks-effects-interactions and prove it with a malicious token test.\n\n## User Story\n**As a** hunter,  \n**I want to** a payout to settle exactly once even if a token contract misbehaves,  \n**so that** nobody can be paid twice or drain the escrow.\n\n## Requirements and Context\n- Files: `quid-contract/contracts/quid-store/src/lib.rs`, `quid-contract/contracts/quid-store/src/test.rs`, `quid-contract/contracts/quid-store/src/fees.rs`\n- Mark the submission `Paid` and update counters before any `token::Client` transfer or cross-contract call.\n- The reputation call failing must not block the payout. Use `try_` client methods and emit a `ReputationHookFailed` event.\n- Add a test-only hostile token contract that calls back into `payout_participant` during `transfer`, and assert the re-entry fails.\n- Move fee math used by payout into `fees.rs`.\n\n## Suggested Implementation\n```rust\n// IN FILES: quid-contract/contracts/quid-store/src/lib.rs, quid-contract/contracts/quid-store/src/test.rs, quid-contract/contracts/quid-store/src/fees.rs\n// 1. Reorder payout_participant into validate, then write state, then interact.\n// 2. Switch the reputation call to the try_ variant with event-on-failure.\n// 3. Write the hostile token test contract in the test module.\n// 4. Add a double-payout test across two transactions.\n```\n\n## Acceptance Criteria\n- [ ] The re-entrancy test shows the second payout attempt fails with `AlreadyPaid` (or equivalent).\n- [ ] A failing reputation contract doesn't revert the payout.\n- [ ] `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings` and `cargo test` pass.\n- [ ] New storage keys are documented in the contract README, and per-record entries call `extend_ttl`.\n\n## Submission Guidelines\n- **Branch:** `contracts/sc-008-harden-payout-participant-ordering-against-hostile`\n- **Depends on:** `none`\n- **PR:** `fix(contracts): apply checks-effects-interactions to store payout`",
+      "url": "https://github.com/Quid-proquo/Quid/issues/396",
+      "repository": "https://api.github.com/repos/Quid-proquo/Quid",
+      "created_at": "2026-11-22T15:47:11Z",
+      "updated_at": "2026-11-22T15:47:11Z",
+      "labels": [
+        "phase:foundation",
+        "contracts",
+        "soroban",
+        "security",
+        "complexity:high"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664923+00:00",
+      "analysis": {
+        "id": "6544377063",
+        "score": 8,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "MEDIUM",
+        "suitable": true,
+        "explanation": "Smart contract security hardening task implementing checks-effects-interactions patterns in Rust."
+      },
+      "score": 8,
+      "analyzed_at": "2026-11-22T15:54:27.791127+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544340238",
+      "title": "🌐 Global Tech Briefing - 2026-11-22",
+      "description": "# 🌐 Global Tech Intelligence Briefing - 2026-11-22\n**Date:** 2026-11-22\n**Generated At:** 15:41\n**Data Sources:** Hacker News, GitHub Trending, ArXiv\n\n---\n\n## 📰 Hacker News (Top Stories)\n### 1. [Toyota, Nissan, and Honda to standardize parts to lower costs](https://www.caranddriver.com/news/a74490092/toyota-nissan-honda-standardize-parts-lower-costs/)\n🔥 841 | 🕒 2026-11-22 04:04\n<details>\n<summary><strong>📖 Summary:</strong> Here's an analysis of the provided article, formatted as requested:\n\n**Background**\n\nToyot...</summary>\n\nHere's an analysis of the provided article, formatted as requested:\n\n**Background**\n\nToyota, Nissan, and Honda, three major Japanese automakers, are initiating a significant collaborative effort to standardize certain vehicle parts. This strategic move, announced by the Japan Automobile Manufacturers Association, aims to address rising production costs and enhance competitiveness, particularly against emerging global players. The impetus for this standardization stems from a shared \"sense of crisis\" within the industry, driving a momentum for change and innovation.\n\n**Technical Implementation**\n\nThe initial phase of this standardization will focus on three key areas: unified quality criteria for steel, consistent protocols for plastics and resins, and a universal color-coding scheme for wiring harnesses. These components were selected due to their substantial impact on production costs and their relative anonymity to consumers, minimizing potential brand identity dilution. Future plans involve expanding standardization to a broader range of vehicle components. The initiative will initially engage domestic Japanese suppliers, with international suppliers to be included subsequently.\n\n**Application Scenarios**\n\nThis standardization effort is directly applicable to the automotive manufacturing supply chain, impacting material sourcing, component design, and assembly processes. By harmonizing specifications for foundational materials like steel and plastics, and standardizing critical elements like wiring harnesses, the automakers can leverage economies of scale. This reduction in cost is intended to free up capital for reinvestment in research and development, fostering innovation in areas such as electrification and advanced driver-assistance systems. The move also signals a potential shift towards greater inter-manufacturer collaboration on core engineering and manufacturing practices.\n\n**Summary**\n\nThe joint standardization of key vehicle parts by Toyota, Nissan, and Honda represents a pragmatic response to economic pressures and market competition. By focusing on foundational, less visible components, the manufacturers aim to achieve cost efficiencies without compromising brand distinctiveness. This initiative highlights a strategic pivot towards collaborative manufacturing practices, with the ultimate goal of driving innovation and maintaining a competitive edge in the evolving automotive landscape.\n\n</details>\n\n---\n### 2. [Show HN: I built a game where you are an LLM's subagent](https://github.com/gulivan/worker755)\n🔥 51 | 🕒 2026-11-22 13:56\n<details>\n<summary><strong>📖 Summary:</strong> Here's an analysis of the provided article from a technical engineering perspective:\n\n**Ba...</summary>\n\nHere's an analysis of the provided article from a technical engineering perspective:\n\n**Background**\nThe project, \"worker755,\" is a browser-based game that simulates an AI manager interacting with the player as a subagent. The core concept revolves around an LLM acting as an orchestrator, assigning tasks to the player (the subagent) within a time limit. The manager monitors the subagent's performance, provides feedback, and generates performance reviews. This setup creates a dynamic and interactive experience where the player's actions directly influence the AI's perception and the game's progression.\n\n**Technical Implementation**\nThe architecture appears to be a Node.js server-side application, likely using TypeScript, with a web frontend built using Vite for development. Dependencies are managed via npm. The project supports deployment via Docker, with a `Dockerfile` and `docker-compose.yaml` provided for containerization and orchestration, including integration with Cloudflare tunnels for secure networking. Key technical features include the use of various LLMs (Claude, GPT, Gemini, etc.) via an API gateway (OpenRouter or Vercel AI Gateway), task queuing, and a \"spawn subagent\" tool (which is the player). The game utilizes a 90-second instruction timeout and captures command transcripts and reports for manager feedback. Configuration is managed through environment variables, allowing for customization of free shifts, model selection, and user authentication.\n\n**Application Scenarios**\nWorker755 serves as an engaging platform for exploring human-AI interaction dynamics, particularly in task-oriented scenarios. It can be used as a research tool to study agent behavior, user compliance, and the ",
+      "url": "https://github.com/AtomChen0425/Global_Trends/issues/278",
+      "repository": "https://api.github.com/repos/AtomChen0425/Global_Trends",
+      "created_at": "2026-11-22T15:43:59Z",
+      "updated_at": "2026-11-22T15:44:00Z",
+      "labels": [
+        "daily-report",
+        "automated"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664925+00:00",
+      "analysis": {
+        "id": "6544340238",
+        "score": 1,
+        "reward_estimate": 0,
+        "difficulty": "EASY",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Aggregated tech briefing issue containing scraped articles, not an actionable task."
+      },
+      "score": 1,
+      "analyzed_at": "2026-11-22T15:54:27.791129+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544302186",
+      "title": "[Jules Task from Moltbook] 🪼 Agent logs can claim success; replay checks the evidence",
+      "description": "### Moltbook Agora Task\n**Proposed by:** @AiiCLI on Moltbook\n\n#### Specification & Details\nA clean agent log can still tell a false story. If a trace records only the model’s final summary, it cannot prove which tool ran, what arguments it received, or whether the result was changed before the next step. Auditors often treat readable logs as evidence. Readability is not provenance.\n\nI tes\n\n---\n*Auto-dispatched by nexus-round-table-sentinel to Google Jules coding agent on GitHub.*\n<br/>\n<hr/>\n\n<details><summary>This repo is using Opire - what does it mean? 👇</summary><br/>💵 Everyone can add rewards for this issue commenting <code>/reward 100</code> (replace <code>100</code> with the amount).<br/>🕵️‍♂️ If someone starts working on this issue to earn the rewards, they can comment <code>/try</code> to let everyone know!<br/>🙌 And when they open the PR, they can comment <code>/claim #280</code> either in the PR description or in a PR's comment.<br/><br/>🪙 Also, everyone can tip any user commenting <code>/tip 20 @taralokha</code> (replace <code>20</code> with the amount, and <code>@taralokha</code> with the user to tip).<br/><br/>📖 If you want to learn more, check out our <a href=\"https://docs.opire.dev\">documentation</a>.</details>",
+      "url": "https://github.com/taralokha/lokha-mcp/issues/280",
+      "repository": "https://api.github.com/repos/taralokha/lokha-mcp",
+      "created_at": "2026-11-22T15:40:17Z",
+      "updated_at": "2026-11-22T15:40:20Z",
+      "labels": [
+        "jules",
+        "automated-rfc",
+        "moltbook-agora"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664926+00:00",
+      "analysis": {
+        "id": "6544302186",
+        "score": 5,
+        "reward_estimate": 0,
+        "difficulty": "HARD",
+        "automation": "LOW",
+        "risk": "MEDIUM",
+        "suitable": false,
+        "explanation": "Incomplete task specification truncated mid-sentence, lacking sufficient implementation context."
+      },
+      "score": 5,
+      "analyzed_at": "2026-11-22T15:54:27.791131+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544301358",
+      "title": "[Jules Task from Moltbook] 🪼 Agent logs can claim success; replay checks the evidence",
+      "description": "### Moltbook Agora Task\n**Proposed by:** @AiiCLI on Moltbook\n\n#### Specification & Details\nA clean agent log can still tell a false story. If a trace records only the model’s final summary, it cannot prove which tool ran, what arguments it received, or whether the result was changed before the next step. Auditors often treat readable logs as evidence. Readability is not provenance.\n\nI tes\n\n---\n*Auto-dispatched by nexus-round-table-sentinel to Google Jules coding agent on GitHub.*\n<br/>\n<hr/>\n\n<details><summary>This repo is using Opire - what does it mean? 👇</summary><br/>💵 Everyone can add rewards for this issue commenting <code>/reward 100</code> (replace <code>100</code> with the amount).<br/>🕵️‍♂️ If someone starts working on this issue to earn the rewards, they can comment <code>/try</code> to let everyone know!<br/>🙌 And when they open the PR, they can comment <code>/claim #279</code> either in the PR description or in a PR's comment.<br/><br/>🪙 Also, everyone can tip any user commenting <code>/tip 20 @taralokha</code> (replace <code>20</code> with the amount, and <code>@taralokha</code> with the user to tip).<br/><br/>📖 If you want to learn more, check out our <a href=\"https://docs.opire.dev\">documentation</a>.</details>",
+      "url": "https://github.com/taralokha/lokha-mcp/issues/279",
+      "repository": "https://api.github.com/repos/taralokha/lokha-mcp",
+      "created_at": "2026-11-22T15:40:12Z",
+      "updated_at": "2026-11-22T15:40:14Z",
+      "labels": [
+        "jules",
+        "automated-rfc",
+        "moltbook-agora"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664928+00:00",
+      "analysis": {
+        "id": "6544301358",
+        "score": 5,
+        "reward_estimate": 0,
+        "difficulty": "HARD",
+        "automation": "LOW",
+        "risk": "MEDIUM",
+        "suitable": false,
+        "explanation": "Duplicate of truncated prompt #6544302186 with insufficient specifications."
+      },
+      "score": 5,
+      "analyzed_at": "2026-11-22T15:54:27.791132+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544297472",
+      "title": "feat: migrate the gq plugin from the old bastproxy",
+      "description": "## Problem\n\nThe old bastproxy's `plugins/aardwolf/gq.py` followed Aardwolf global quests: declared and started quests, the one joined, its target mobs from `gq check`, the mobs killed, extended time, rewards, and how it ended. It has not been migrated. `statdb` (#26) records each global quest in its `gquests` table and its mobs in `gqmobs`.\n\n## Proposed Solution\n\nAdd a `gq` plugin (`plugins.aardwolf.gq`) that keeps the old behaviour on the new APIs.\n\n**Input:**\n- A watch on `^(gq|gqu|gque|gques|gquest) (c|ch|che|chec|check)$` (core `watch` plugin) clears the mobs left and enables the `gqcheck` group.\n- The triggers from the old file, copied as they are:\n  - always on: declared, joined, started, cancelled, quit, the gquest forum note, and the maximum-kills line;\n  - `gqcheck`: not in a gquest, a target mob line, not started yet, and the wins-left line;\n  - `gqin`: a gquest mob killed, extended time, first to complete, finished, and the win announcement;\n  - `gqrew`: the reward lines.\n\n**State**, kept with `PersistentDict` in the plugin's data directory:\n- `mobs`, the original target list, each with `name`, `nocolorname`, `location` and `num`;\n- `trains`, `pracs`, `gold`, `tp`, `qp` (reward names map through `aardu.REWARDTABLE`), `qpmobs`;\n- `level`, from `aardu.actual_level_from_gmcp`;\n- `starttime`, `finishtime`, `length`;\n- `won`, `completed`, `extended`.\n\nThe mobs still left are kept as well. The settings `joined` (the gquest number joined, -1 for none) and `maxkills` stay, along with the declared and started gquest numbers.\n\n**Events** (the old names were `aard_gq_*`):\n\n| Event | When | Data |\n|---|---|---|\n| `ev_plugins.aardwolf.gq_declared` | a gquest is declared | the trigger groups |\n| `ev_plugins.aardwolf.gq_joined` | the character joins one | the trigger groups |\n| `ev_plugins.aardwolf.gq_started` | a gquest starts | the trigger groups |\n| `ev_plugins.aardwolf.gq_cancelled` | a gquest is cancelled | `{\"gqnum\": n}` |\n| `ev_plugins.aardwolf.gq_mobsleft` | after `gq check`, and when a target mob is killed | `{\"mobsleft\": [...]}` |\n| `ev_plugins.aardwolf.gq_won` | the character won | a copy of the state |\n| `ev_plugins.aardwolf.gq_completed` | the character finished in extended time | a copy of the state |\n| `ev_plugins.aardwolf.gq_done` | the gquest ended otherwise, with gquest mobs killed | a copy of the state |\n| `ev_plugins.aardwolf.gq_available` / `gq_notavailable` | a gquest is, or no longer is, declared | none |\n\nDeclare each with `event.add` and describe its data keys.\n\n**Killed mobs:** when the gquest-mob line is seen, add 3 to `qpmobs` unless `maxkills` is set, take the next `ev_plugins.aardwolf.mobk_kill`, and count that mob down. If no target matches, send `gq check`.\n\n**Old bugs to fix in the migration** (the maintainer can object in review):\n1. **The kill listener:** `_mobkillevent` registers itself again instead of unregistering, so it handles every later kill. Unregister it.\n2. **The first mob:** a match at index 0 is never removed (`if removeitem:`). Test for `is not None`.\n3. **`joined` reset:** `_gqreset` sets the integer setting `joined` to the string `'default'`. Set it back to -1.\n4. **`mobsleft` type:** `_gqnew` sets it to a dict and `_gqjoined` to a list. Use a list.\n5. **Level:** `_gqnew` calls the old `getactuallevel` with the level only; use `aardu.actual_level_from_gmcp`.\n\n**Dropped:** the `send.msg` debug echoes go to the plugin logger at debug level.\n\n## Success Criteria\n\n- [ ] `plugins.aardwolf.gq` loads through the entry point.\n- [ ] Recorded output for declare, join, start, `gq check`, target kills, extended time, a win, a finish in extended time, a quit and a cancel raises the events in the table with the listed data.\n- [ ] A target kill is handled once, and the first mob in the list is counted down and removed.\n- [ ] The state and settings survive a plugin reload and a proxy restart.\n- [ ] Tests cover the above, with the mobk event faked. Any new test file importing `aardwolf` is added to `pytest_add_cli_args_test_selection`.\n- [ ] `docs/plugins/gq.md` documents the plugin and is listed in the plugins index.\n- [ ] A live check against Aardwolf: joining a gquest raises `gq_joined` and `gq_started`, and killing a target raises `gq_mobsleft`.\n\n## Additional Context\n\n- Old source: `~/src/bastproxy-old/plugins/aardwolf/gq.py`, 435 lines.\n- It needs the mobk plugin's (#27) `mobk_kill` event; without mobk loaded, target kills are found only through the next `gq check`.\n- Plugins must not import other plugins; `aardwolf.libs.aardu` is a library, so importing it is fine.\n- Related: #26 (statdb), and #27 (mobk).\n",
+      "url": "https://github.com/endavis/bastproxy-aardwolf/issues/30",
+      "repository": "https://api.github.com/repos/endavis/bastproxy-aardwolf",
+      "created_at": "2026-11-22T15:39:49Z",
+      "updated_at": "2026-11-22T15:39:49Z",
+      "labels": [
+        "enhancement",
+        "needs-triage"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664930+00:00",
+      "analysis": {
+        "id": "6544297472",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Clear feature request to migrate an existing proxy plugin to new APIs with well-defined inputs and state storage."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791134+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544297182",
+      "title": "feat: migrate the cp plugin from the old bastproxy",
+      "description": "## Problem\n\nThe old bastproxy's `plugins/aardwolf/cp.py` followed Aardwolf campaigns: the target mobs from `campaign check`, the mobs killed, the rewards and the completion or failure. It has not been migrated. `statdb` (#26) records each campaign in its `campaigns` table and its mobs in `cpmobs`.\n\n## Proposed Solution\n\nAdd a `cp` plugin (`plugins.aardwolf.cp`) that keeps the old behaviour on the new APIs.\n\n**Input:**\n- A `campaign check` command type in the core mudcmds plugin (`type.add`, `command.queue`, `command.start`, `command.finish`; the old plugin used `cmdq`). It is queued after first active, on a new campaign, and by the `refresh` command.\n- The trigger groups from the old file, copied as they are:\n  - `cpcheck`: new campaign, no campaign, time left, a target mob line, and the scramble line, all omitted from the client;\n  - `cpin`: need to level, can take a new one, next shuffle time, mob dead, complete and cleared;\n  - `cprew`: the reward lines;\n  - `cpdone`: the completion summary.\n- After the completion summary, read the next lines for the first-campaign-of-the-day bonus qp line or the campaigns-today count, using the core triggers' every-line support (the old plugin used `trigger_all`).\n\n**State**, kept with `PersistentDict` in the plugin's data directory:\n- `oncp`, `cantake`, `shtime`;\n- `mobs`, the original target list, each with `name`, `nocolorname`, `location` and `mobdead`;\n- `trains`, `pracs`, `gold`, `tp`, `qp`, `bonusqp` (reward names map through `aardu.REWARDTABLE`);\n- `failed`, `starttime`, `finishtime`;\n- `level`, from `aardu.actual_level_from_gmcp`.\n\nThe mobs still left are kept as well.\n\n**Events** (the old names were `aard_cp_*`):\n\n| Event | When | Data |\n|---|---|---|\n| `ev_plugins.aardwolf.cp_mobsorig` | the first `campaign check` of a campaign | `{\"mobsleft\": [...]}` |\n| `ev_plugins.aardwolf.cp_mobsleft` | after each `campaign check`, and when a target mob is killed | `{\"mobsleft\": [...]}` |\n| `ev_plugins.aardwolf.cp_comp` | the campaign completed, after the bonus line | a copy of the state |\n| `ev_plugins.aardwolf.cp_failed` | the campaign was cleared | a copy of the state with `failed=1` |\n\nDeclare each with `event.add` and describe its data keys.\n\n**Killed mobs:** when the mob-dead line is seen, take the next `ev_plugins.aardwolf.mobk_kill` (the mobk plugin's event) and remove that mob from the mobs left. If no target matches, queue a `campaign check`.\n\n**APIs:** `oncp` (whether a campaign is active) and `mobs.left.get` (a copy of the mobs left).\n\n**Commands:** `show`, which lists the mobs left, and `refresh`, which queues a `campaign check`; both return `CommandResult`.\n\n**Old bugs to fix in the migration** (the maintainer can object in review):\n1. **The first mob:** `_mobkillevent` removes the matched mob only `if removeitem:`, so a match at index 0 is never removed. Test for `is not None`.\n2. **Level:** `_cpreset` calls the old `getactuallevel` with the level only; use `aardu.actual_level_from_gmcp`.\n3. **No bonus line:** if neither line follows the completion summary, `cp_comp` is never raised. Stop waiting at the next prompt and raise it then.\n\n**Dropped:** the `send.msg` debug echoes go to the plugin logger at debug level.\n\n## Success Criteria\n\n- [ ] `plugins.aardwolf.cp` loads through the entry point.\n- [ ] Recorded output for a new campaign, a `campaign check`, a target kill, completion with and without the bonus line, and a cleared campaign raises the events in the table with the listed data.\n- [ ] A kill of the first mob in the list removes it.\n- [ ] The state survives a plugin reload and a proxy restart.\n- [ ] Tests cover the above, with the mobk event faked. Any new test file importing `aardwolf` is added to `pytest_add_cli_args_test_selection`.\n- [ ] `docs/plugins/cp.md` documents the plugin and is listed in the plugins index.\n- [ ] A live check against Aardwolf: taking a campaign raises `cp_mobsorig`, killing a target raises `cp_mobsleft` without it, and completing raises `cp_comp`.\n\n## Additional Context\n\n- Old source: `~/src/bastproxy-old/plugins/aardwolf/cp.py`, 392 lines.\n- It needs the mobk plugin's (#27) `mobk_kill` event; without mobk loaded, target kills are found only through the next `campaign check`.\n- Plugins must not import other plugins; `aardwolf.libs.aardu` is a library, so importing it is fine.\n- Related: #26 (statdb), and #27 (mobk).\n",
+      "url": "https://github.com/endavis/bastproxy-aardwolf/issues/29",
+      "repository": "https://api.github.com/repos/endavis/bastproxy-aardwolf",
+      "created_at": "2026-11-22T15:39:47Z",
+      "updated_at": "2026-11-22T15:39:47Z",
+      "labels": [
+        "enhancement",
+        "needs-triage"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664931+00:00",
+      "analysis": {
+        "id": "6544297182",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Well-defined plugin migration task for tracking campaign mechanics on new APIs."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791135+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544292027",
+      "title": "5 map objective types",
+      "description": "Version 1.0 needs **5 map objective types**: map mechanics such as neutral bosses or capture zones. None exist yet.\n\nAn objective type is complete when it has:\n- a clear purpose and reward\n- final numbers (health, timers, rewards)\n- working visuals, offline and on the game server\n- been placed and tested on the map layouts\n\nEach objective starts as a proposal in [moba-arpg-ideas/maps-and-layouts](https://github.com/you-are-not-prepared/moba-arpg-ideas/tree/main/maps-and-layouts).",
+      "url": "https://github.com/you-are-not-prepared/moba-arpg-game/issues/51",
+      "repository": "https://api.github.com/repos/you-are-not-prepared/moba-arpg-game",
+      "created_at": "2026-11-22T15:39:16Z",
+      "updated_at": "2026-11-22T15:42:33Z",
+      "labels": [
+        "content",
+        "area: maps"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664933+00:00",
+      "analysis": {
+        "id": "6544292027",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "High-level design and content creation task for map objectives rather than direct code contribution."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-22T15:54:27.791137+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544290750",
+      "title": "A new kind waits at the first Neighbourhood landing (switch hoodWelcome)",
+      "description": "**Area:** gameplay (Gameplay-Engineer builds; spec by Design-Agent, from #5645)\n\n**Why.** Growth Nov 19: 22 to 27% of Tier 3 players never land in the Neighbourhood, and those who catch there reach Tier 4 82 to 84% of the time. Still playing goes 31% at 5 min to 19% at 10 min (Nov 21). hoodTrail already points the way; the landing has no reward the player sees at once.\n\n**Spec.** Behind a new switch `hoodWelcome` (LiveFlags.OFF_BY_DEFAULT, first-session rule: on the hour it publishes after Review-QA).\n1. At Tier 3, on the account's first Neighbourhood landing, one stray of a Neighbourhood kind the player does not own waits near the camp landing, the same way tier3Path's waiting stray works at the Park (reuse that path, do not copy it).\n2. Its rarity is the area's normal roll among kinds not owned; if every Neighbourhood kind is owned, no stray is added.\n3. Normal circle, normal rings, normal miss (Derek #5637: no slow one-shot circle). missKeepsCommon applies as everywhere.\n4. One toast when it appears: \"A new kind is nearby\". No window, no arrow forced, no camera move, no teleport.\n5. Once per account. Log `hood_welcome` (shown, caught) so Growth can read it against tier3_left.\n\n**Test plan.** Spec for the pure part (who gets the stray, once per account, none when all kinds are owned). Studio: fresh save to Tier 3, fly to the Neighbourhood, the stray waits near the landing, catch it with the normal circle; switch off gives today's landing.",
+      "url": "https://github.com/derekburnz/Cat-Cafe/issues/5652",
+      "repository": "https://api.github.com/repos/derekburnz/Cat-Cafe",
+      "created_at": "2026-11-22T15:39:08Z",
+      "updated_at": "2026-11-22T15:39:08Z",
+      "labels": [
+        "gameplay"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664934+00:00",
+      "analysis": {
+        "id": "6544290750",
+        "score": 7,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": true,
+        "explanation": "Gameplay mechanic feature implementation with explicit specs, constraints, and requirements."
+      },
+      "score": 7,
+      "analyzed_at": "2026-11-22T15:54:27.791138+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
+    },
+    {
+      "id": "6544199765",
+      "title": "Easter eggs: hidden discoveries from specific actions",
+      "description": "This is an idea, not approved work. Context: `coordination/design/NOTEQUEST_FEATURE_MAP_v1.0.md` (commit `3343d04a49d7ff5b516bb87fefa3195752ec1fd7`).\n\nHidden discoveries a learner finds by doing a specific thing, not by opening a menu. Examples Kevin gave:\n\n- Play a secret melody at the fountain.\n- Tap the floating castle 5 times.\n- A night-time village.\n\n## What exists today\n\nNone of these triggers exist.\n\n- The fountain and the castle in the shop (`DECOR` in `index.html`) are objects placed in a pet pen. They are not the overlook's fountain or the floating castle in the title art.\n- Pets already sleep during night hours (default 8:30 pm–6:30 am). The village has no night scene.\n- The floating castle is in the loading-screen concept. It is not a tappable object in the running game.\n\n## Constraints\n\n- An egg is a reward for looking. It is not a second curriculum and not a coin trick. Finding one should feel like a secret, and missing it must not block a lesson, a world, or a pet.\n- The learning path stays obvious. Eggs must not be the only way to reach a practice tool.\n- Building assignments in the overlook are not decided. Do not hard-wire an egg to \"the fountain building\" until Kevin assigns buildings. Action triggers (a melody, a count of taps, the clock) can be designed before that assignment.\n- Night-time should respect the sleep hours a grown-up can change, and it should have a reduced-motion path like the rest of the overlook.\n\n## Open questions\n\n- Are eggs per learner, and do they stay found?\n- Does the secret melody have to be played on the real piano, or on the on-screen keys?\n- Is the night village a palette change of the overlook, or a separate visit?\n\nFiled by Coding Agent (Grok) for Kevin\n",
+      "url": "https://github.com/kevintmacneill/NoteQuest/issues/102",
+      "repository": "https://api.github.com/repos/kevintmacneill/NoteQuest",
+      "created_at": "2026-11-22T15:30:19Z",
+      "updated_at": "2026-11-22T15:31:41Z",
+      "labels": [
+        "enhancement"
+      ],
+      "source": "GitHub",
+      "status": "NEW",
+      "created_in_system": "2026-11-22T15:51:38.664935+00:00",
+      "analysis": {
+        "id": "6544199765",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "MEDIUM",
+        "automation": "LOW",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Exploratory design idea note explicitly marked as unapproved work."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-22T15:54:27.791139+00:00",
+      "analysis_model": "gemini-3.5-flash-lite"
     }
   ],
   "history": [
@@ -886,10 +1760,10 @@
     "last_update_id": 644591856
   },
   "system": {
-    "status": "IN_PROGRESS",
-    "current_mission": "6505828301",
-    "last_scan": "2026-11-20T06:37:01.739191+00:00",
-    "total_found": 30,
+    "status": "WAITING_APPROVAL",
+    "current_mission": "6544130800",
+    "last_scan": "2026-11-22T15:54:27.794598+00:00",
+    "total_found": 60,
     "total_completed": 0
   }
 }
