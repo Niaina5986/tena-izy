@@ -1,62 +1,73 @@
 name: BOT WORKER - Telegram Approval
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
-  schedule:
-    - cron: "*/5 * * * *"
+schedule:
+- cron: "*/5 * * * *"
 
 permissions:
-  contents: write
+contents: write
 
 concurrency:
-  group: bot-worker
-  cancel-in-progress: false
+group: tena-izy-db
+cancel-in-progress: false
 
 jobs:
-  telegram-approval:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+telegram-approval:
+runs-on: ubuntu-latest
+timeout-minutes: 20
 
-    steps:
-      - name: Télécharger le dépôt
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      ref: main
+      fetch-depth: 0
+      token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Installer Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.12"
 
-      - name: Vérifier les fichiers
-        run: |
-          test -f db.json
-          test -f telegram_approval.py
-          test -f manus_worker.py
+  - name: Verify required files
+    run: |
+      test -f db.json
+      test -f telegram_approval.py
+      test -f manus_worker.py
 
-      - name: Récupérer les décisions Telegram
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python telegram_approval.py
+  - name: Retrieve Telegram decisions
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    run: python telegram_approval.py
 
-      - name: Exécuter une mission approuvée avec Manus
-        env:
-          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
-        run: python manus_worker.py
+  - name: Execute approved missions
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+    run: python manus_worker.py
 
-      - name: Sauvegarder les résultats
-        if: always()
-        run: |
-          git config user.name "BOT WORKER"
-          git config user.email "bot-worker@users.noreply.github.com"
+  - name: Save database safely
+    if: always()
+    run: |
+      git config user.name "TENA IZY BOT"
+      git config user.email "tena-izy-bot@users.noreply.github.com"
 
-          git add db.json
+      git add db.json
 
-          if ! git diff --cached --quiet; then
-            git commit -m "BOT WORKER: approval and execution update"
-          fi
+      if git diff --cached --quiet; then
+        echo "No database changes."
+        exit 0
+      fi
 
-          git pull --rebase origin main
-          git push origin main
+      git commit -m "TELEGRAM APPROVAL: update missions"
+
+      git fetch origin main
+
+      if ! git merge-base --is-ancestor origin/main HEAD; then
+        echo "ERROR: Remote branch changed unexpectedly."
+        exit 1
+      fi
+
+      git push origin HEAD:main
