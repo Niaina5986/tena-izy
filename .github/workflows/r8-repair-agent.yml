@@ -1,40 +1,63 @@
 name: R8 Repair Agent
 
 on:
-  workflow_dispatch:
+workflow_dispatch:
 
 permissions:
-  contents: write
+contents: write
 
 concurrency:
-  group: r8-repair-agent
-  cancel-in-progress: false
+group: tena-izy-db
+cancel-in-progress: false
 
 jobs:
-  repair:
-    runs-on: ubuntu-latest
+repair:
+runs-on: ubuntu-latest
+timeout-minutes: 20
 
-    steps:
-      - name: Recuperer le depot
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      ref: main
+      fetch-depth: 0
+      token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Installer Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.12"
 
-      - name: Lancer R8
-        env:
-          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
-        run: python r8_repair_agent.py
+  - name: Verify required files
+    run: |
+      test -f db.json
+      test -f r8_repair_agent.py
 
-      - name: Enregistrer les modifications
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  - name: Run R8 Repair Agent
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+    run: python r8_repair_agent.py
 
-          git add db.json
+  - name: Save database safely
+    if: always()
+    run: |
+      git config user.name "TENA IZY BOT"
+      git config user.email "tena-izy-bot@users.noreply.github.com"
 
-          git diff --cached --quiet || git commit -m "Start controlled R8 repair"
+      git add db.json
 
-          git push
+      if git diff --cached --quiet; then
+        echo "No database changes."
+        exit 0
+      fi
+
+      git commit -m "R8: update repair status"
+
+      git fetch origin main
+
+      if ! git merge-base --is-ancestor origin/main HEAD; then
+        echo "ERROR: Remote branch changed unexpectedly."
+        exit 1
+      fi
+
+      git push origin HEAD:main
