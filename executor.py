@@ -13,7 +13,9 @@ DB_FILE = "db.json"
 MANUS_KEY = os.getenv("MANUS_API_KEY")
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TG_CHAT = os.getenv("TELEGRAM_CHAT_ID")
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+# Priorité au secret GH_PAT, compatibilité ancienne variable
+GITHUB_TOKEN = os.getenv("GH_PAT") or os.getenv("GITHUB_TOKEN")
 
 MAX_TASKS = int(os.getenv("MAX_MANUS_TASKS_PER_RUN", "1"))
 
@@ -602,8 +604,6 @@ def start_missions(missions):
         if not isinstance(mission, dict):
             continue
 
-        # Ne lancer que les missions nouvelles ou approuvées.
-
         if mission.get("status") not in (
             "DISCOVERED",
             "APPROVED"
@@ -615,7 +615,7 @@ def start_missions(missions):
         if mission.get("manus_task_id"):
             continue
 
-        # Vérification préalable de disponibilité.
+        # Vérification préalable.
 
         check, reason = check_bounty_availability(
             mission
@@ -624,8 +624,6 @@ def start_missions(missions):
         mission["preflight_check"] = check
         mission["preflight_reason"] = reason
         mission["preflight_checked_at"] = now()
-
-        # Mission déjà prise, fermée ou impossible à vérifier.
 
         if check != "CLEAR":
 
@@ -709,17 +707,24 @@ def main():
     print("TENA IZY — EXECUTION V4")
     print("=" * 45)
 
+    if GITHUB_TOKEN:
+        print("Authentification GitHub : activée")
+    else:
+        print("Authentification GitHub : absente")
+
     db = load_db()
     missions = db["missions"]
 
     print("Nombre de missions :", len(missions))
 
     # Surveiller les tâches Manus existantes.
+
     print("Surveillance des tâches Manus...")
 
     monitor_missions(missions)
 
     # Chercher une nouvelle mission disponible.
+
     print("Recherche d'une mission à exécuter...")
 
     start_missions(missions)
