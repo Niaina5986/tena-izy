@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-23T14:21:10.556444+00:00",
+  "updated_at": "2026-11-23T16:27:07.423097+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -206,7 +206,7 @@
       "updated_at": "2026-11-20T05:41:46Z",
       "labels": [],
       "source": "GitHub",
-      "status": "EXECUTING",
+      "status": "REVIEW_REQUIRED",
       "created_in_system": "2026-11-20T06:34:25.762906+00:00",
       "analysis": {
         "id": "6505617306",
@@ -223,7 +223,10 @@
       "analysis_model": "gemini-3.5-flash-lite",
       "manus_task_id": "5u3mC5U7PSLeWGFLPFWvuC",
       "manus_task_url": "https://manus.im/app/5u3mC5U7PSLeWGFLPFWvuC",
-      "started_at": "2026-11-23T14:21:10.057762+00:00"
+      "started_at": "2026-11-23T14:21:10.057762+00:00",
+      "execution_summary": "Le connecteur n’est pas encore activé : la demande précédente n’a pas été approuvée.\n\nDans Manus, ouvrez **Paramètres → Connecteurs**, choisissez **GitHub**, puis cliquez sur **Connecter/Activer**. Connectez-vous sur [GitHub](https://github.com/login) et autorisez l’accès au dépôt `Ayush441-python/AUREN` — ou à votre fork — avec les droits nécessaires pour publier une branche et créer une Pull Request. Ne collez pas de jeton d’accès dans le chat.\n\nUne fois l’autorisation terminée, revenez dans cette tâche : je pourrai reprendre le push et la création de la PR.\n\nMerci, je reprends la livraison. Je vérifie que l’autorisation GitHub est effectivement disponible, puis je pousserai la branche et ouvrirai une PR vers `main` si le dépôt l’accepte; je ne la fusionnerai pas.\n\nLe connecteur est maintenant marqué comme activé après la confirmation. Je vérifie l’accès effectif, puis je pousse la branche et ouvre une PR qui référence les deux issues; je laisserai les PRs existantes et la branche `main` inchangées.\n\nLe connecteur est maintenant opérationnel, mais le compte authentifié n’a pas le droit de pousser directement dans le dépôt amont (réponse GitHub 403). Je vais donc utiliser le flux normal de contribution depuis un fork, puis soumettre la PR vers `main` sans modifier ni fusionner les PRs existantes.\n\nLa branche a bien été poussée sur le fork de votre compte, mais l’API GitHub refuse la création de PR vers le dépôt amont avec `Resource not accessible by integration`. Je vérifie les autorisations exactes du connecteur avant de conclure; le commit et la branche publiée restent disponibles.\n\nLa branche est publiée sur votre fork, mais le connecteur GitHub refuse la création d’une PR vers le dépôt amont. Veuillez vous connecter à GitHub dans le navigateur ouvert pour que je puisse soumettre la PR sans la fusionner.\n\nMerci, je vérifie si la session GitHub du navigateur est maintenant authentifiée, puis je soumettrai la PR depuis la page de comparaison déjà préparée, sans la fusionner.\n\nLa branche et les deux commits sont visibles sur GitHub, et la comparaison confirme qu’ils peuvent être fusionnés. La page GitHub ouverte reste toutefois déconnectée; je vérifie si le navigateur authentifié de Manus peut être activé pour soumettre la PR via l’interface.\n\nLa branche est publiée sur votre fork, mais le connecteur GitHub refuse la création d’une PR vers le dépôt amont. Veuillez vous connecter à GitHub dans le navigateur ouvert pour que je puisse soumettre la PR sans la fusionner.\n\nLa branche et les deux commits sont visibles sur GitHub, et la comparaison confirme qu’ils peuvent être fusionnés. La page GitHub ouverte reste toutefois déconnectée; je vérifie si le navigateur authentifié de Manus peut être activé pour soumettre la PR via l’interface.\n\nLa page reste déconnectée; l’activation du connecteur « My Browser » est donc nécessaire pour agir dans la session GitHub authentifiée. Je relis les consignes de connexion et de gestion des connecteurs avant de demander cette activation.\n\nLe navigateur authentifié vient d’être activé. Je bascule vers cette session et, si elle est connectée à GitHub, je soumettrai la PR vers `main` sans la fusionner.",
+      "deliverables": [],
+      "last_result_checked": "2026-11-23T16:27:05.840037+00:00"
     },
     "6505613459": {
       "id": "6505613459",
@@ -19224,6 +19227,240 @@
       "score": 4,
       "analyzed_at": "2026-11-23T14:21:08.655205+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:51a1b7840425af3fde5c": {
+      "id": "rentahuman:51a1b7840425af3fde5c",
+      "title": "Photograph 10 LEGO pieces on 2 printed pages (colour printer and ruler needed)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/51a1b7840425af3fde5c",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.289586+00:00",
+      "updated_at": "2026-11-23T16:27:05.289588+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.289590+00:00",
+      "analysis": {
+        "id": "rentahuman:51a1b7840425af3fde5c",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294175+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:lablab-ai/community-content#498": {
+      "id": "algora:lablab-ai/community-content#498",
+      "title": "Creating comprehensive tutorial for Agile Loop",
+      "description": "",
+      "url": "https://github.com/lablab-ai/community-content/issues/498",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.289953+00:00",
+      "updated_at": "2026-11-23T16:27:05.289955+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.289957+00:00",
+      "analysis": {
+        "id": "algora:lablab-ai/community-content#498",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294209+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:lablab-ai/community-content#490": {
+      "id": "algora:lablab-ai/community-content#490",
+      "title": "Creating condensed Tutorial for GPT-4o",
+      "description": "",
+      "url": "https://github.com/lablab-ai/community-content/issues/490",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.289960+00:00",
+      "updated_at": "2026-11-23T16:27:05.289961+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.289963+00:00",
+      "analysis": {
+        "id": "algora:lablab-ai/community-content#490",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294219+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:lablab-ai/community-content#496": {
+      "id": "algora:lablab-ai/community-content#496",
+      "title": "Creating comprehensive tutorial for Llama-3",
+      "description": "",
+      "url": "https://github.com/lablab-ai/community-content/issues/496",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.289965+00:00",
+      "updated_at": "2026-11-23T16:27:05.289967+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.289968+00:00",
+      "analysis": {
+        "id": "algora:lablab-ai/community-content#496",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294228+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:outerbase/starbasedb#71": {
+      "id": "algora:outerbase/starbasedb#71",
+      "title": "Improve test coverage with Vitest",
+      "description": "",
+      "url": "https://github.com/outerbase/starbasedb/issues/71",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.289994+00:00",
+      "updated_at": "2026-11-23T16:27:05.289996+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.290000+00:00",
+      "analysis": {
+        "id": "algora:outerbase/starbasedb#71",
+        "score": 4,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 4,
+      "analyzed_at": "2026-11-23T16:27:05.294241+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:scratchdata/scratchdata#126": {
+      "id": "algora:scratchdata/scratchdata#126",
+      "title": "Use a AWS Secret Manager for DB credentials",
+      "description": "",
+      "url": "https://github.com/scratchdata/scratchdata/issues/126",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.290013+00:00",
+      "updated_at": "2026-11-23T16:27:05.290015+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.290016+00:00",
+      "analysis": {
+        "id": "algora:scratchdata/scratchdata#126",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294251+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:scratchdata/scratchdata#170": {
+      "id": "algora:scratchdata/scratchdata#170",
+      "title": "UI for Database Connection Add and Delete",
+      "description": "",
+      "url": "https://github.com/scratchdata/scratchdata/issues/170",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.290068+00:00",
+      "updated_at": "2026-11-23T16:27:05.290069+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.290071+00:00",
+      "analysis": {
+        "id": "algora:scratchdata/scratchdata#170",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294261+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:PiLab-Indonesia/RPi-Monitoring#12": {
+      "id": "algora:PiLab-Indonesia/RPi-Monitoring#12",
+      "title": "projects (docs-dashboard): add dashboard docs and manager guidance",
+      "description": "",
+      "url": "https://github.com/PiLab-Indonesia/RPi-Monitoring/issues/12",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.290109+00:00",
+      "updated_at": "2026-11-23T16:27:05.290111+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.290112+00:00",
+      "analysis": {
+        "id": "algora:PiLab-Indonesia/RPi-Monitoring#12",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294270+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "algora:tscircuit/template-api-fake#2": {
+      "id": "algora:tscircuit/template-api-fake#2",
+      "title": "Switch to `ky` from `redaxios`",
+      "description": "",
+      "url": "https://github.com/tscircuit/template-api-fake/issues/2",
+      "repository": "",
+      "created_at": "2026-11-23T16:27:05.290126+00:00",
+      "updated_at": "2026-11-23T16:27:05.290127+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-23T16:27:05.290128+00:00",
+      "analysis": {
+        "id": "algora:tscircuit/template-api-fake#2",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-23T16:27:05.294278+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19236,16 +19473,21 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-23T14:21:10.556439+00:00",
       "new_missions": 593
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-23T16:27:07.423091+00:00",
+      "new_missions": 9
     }
   ],
   "telegram": {
     "last_update_id": 644591856
   },
   "system": {
-    "status": "IDLE",
+    "status": "RUNNING",
     "current_mission": "6505617306",
-    "last_scan": "2026-11-23T14:21:10.556329+00:00",
-    "total_found": 740,
+    "last_scan": "2026-11-23T16:27:07.422979+00:00",
+    "total_found": 749,
     "total_completed": 0
   }
 }
