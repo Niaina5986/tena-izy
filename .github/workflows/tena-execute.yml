@@ -2,6 +2,7 @@ name: TENA IZY - Execution
 
 on:
   workflow_dispatch:
+
   schedule:
     - cron: "*/10 * * * *"
 
@@ -17,16 +18,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Récupérer le projet
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - name: Installer Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Installer requests
-        run: pip install requests
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
-      - name: Exécuter les tâches
+      - name: Exécuter et surveiller les missions
         env:
           MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -38,8 +45,33 @@ jobs:
         run: |
           git config user.name "TENA IZY"
           git config user.email "actions@github.com"
+
           git add db.json
-          git diff --cached --quiet || (
-            git commit -m "TENA IZY: execution update"
-            git push
-          )
+
+          if git diff --cached --quiet; then
+            echo "Aucune modification."
+            exit 0
+          fi
+
+          git commit -m "TENA IZY: execution update"
+
+          BRANCH="${GITHUB_REF_NAME}"
+
+          for i in 1 2 3 4 5; do
+
+            git fetch origin "$BRANCH"
+
+            git rebase "origin/$BRANCH"
+
+            if git push origin "HEAD:$BRANCH"; then
+              echo "Sauvegarde réussie."
+              exit 0
+            fi
+
+            echo "Nouvelle tentative $i..."
+            sleep 3
+
+          done
+
+          echo "Échec de sauvegarde."
+          exit 1
