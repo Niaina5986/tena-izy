@@ -1,0 +1,45 @@
+name: TENA IZY - Execution
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tena-izy-database
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer requests
+        run: pip install requests
+
+      - name: Exécuter les tâches
+        env:
+          MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MAX_MANUS_TASKS_PER_RUN: "1"
+        run: python executor.py
+
+      - name: Sauvegarder les résultats
+        run: |
+          git config user.name "TENA IZY"
+          git config user.email "actions@github.com"
+          git add db.json
+          git diff --cached --quiet || (
+            git commit -m "TENA IZY: execution update"
+            git push
+          )
