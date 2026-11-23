@@ -1,0 +1,44 @@
+name: TENA IZY - Recherche
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tena-izy-database
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer requests
+        run: pip install requests
+
+      - name: Recherche des missions
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MIN_REWARD_USD: "5"
+        run: python main.py
+
+      - name: Sauvegarder les résultats
+        run: |
+          git config user.name "TENA IZY"
+          git config user.email "actions@github.com"
+          git add db.json
+          git diff --cached --quiet || (
+            git commit -m "TENA IZY: missions found"
+            git push
+          )
