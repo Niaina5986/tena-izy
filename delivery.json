@@ -1,0 +1,11 @@
+{
+  "job_id": "mission-001",
+  "source": "Manus",
+  "repository": "Niaina5986/tena-izy",
+  "base_branch": "main",
+  "title": "Correction et livraison",
+  "description": "Travail terminé et testé.",
+  "source_dir": "files",
+  "ready": true,
+  "delete_paths": []
+}
