@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import requests
 from datetime import datetime, timezone
 
@@ -12,8 +13,8 @@ DB_FILE = "db.json"
 MANUS_KEY = os.getenv("MANUS_API_KEY")
 TG_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TG_CHAT = os.getenv("TELEGRAM_CHAT_ID")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-# Une seule mission par lancement
 MAX_TASKS = int(os.getenv("MAX_MANUS_TASKS_PER_RUN", "1"))
 
 MANUS_API = "https://api.manus.ai/v2"
@@ -122,10 +123,130 @@ def notify(message):
 
 
 # =====================================================
+# API GITHUB
+# =====================================================
+
+def github_request(endpoint):
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "TENA-IZY"
+    }
+
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+
+    response = requests.get(
+        "https://api.github.com" + endpoint,
+        headers=headers,
+        timeout=30
+    )
+
+    response.raise_for_status()
+
+    return response.json()
+
+
+# =====================================================
+# VERIFICATION AVANT EXECUTION
+# =====================================================
+
+def check_bounty_availability(mission):
+
+    url = mission.get("url", "")
+
+    match = re.search(
+        r"github\.com/([^/]+)/([^/]+)/issues/(\d+)",
+        url
+    )
+
+    # Les missions hors GitHub ne sont pas contrôlées ici.
+    if not match:
+        return "CLEAR", "Mission non issue GitHub"
+
+    owner, repo, number = match.groups()
+    base = f"/repos/{owner}/{repo}"
+
+    try:
+
+        # 1. Vérifier que l'issue existe et reste ouverte.
+
+        issue = github_request(
+            f"{base}/issues/{number}"
+        )
+
+        if issue.get("state") != "open":
+            return "CLOSED", "Issue GitHub fermée"
+
+        # 2. Vérifier les PR directement liées à cette issue.
+
+        pulls = github_request(
+            f"{base}/issues/{number}/pulls?per_page=100"
+        )
+
+        if pulls:
+            details = []
+
+            for pr in pulls[:5]:
+                details.append(
+                    f"PR #{pr.get('number')} "
+                    f"({pr.get('state')})"
+                )
+
+            return (
+                "PR_EXISTS",
+                "Pull Request déjà liée : "
+                + ", ".join(details)
+            )
+
+        # 3. Examiner les commentaires de l'issue.
+
+        comments = github_request(
+            f"{base}/issues/{number}/comments?per_page=100"
+        )
+
+        claim_terms = [
+            "claimed by",
+            "bounty claimed",
+            "claiming this bounty",
+            "i claim this bounty",
+            "working on this bounty",
+            "assigned to",
+            "reserved for"
+        ]
+
+        for comment in comments:
+
+            body = str(
+                comment.get("body", "")
+            ).lower()
+
+            if any(term in body for term in claim_terms):
+
+                return (
+                    "CLAIMED",
+                    "Une revendication ou réservation "
+                    "semble exister dans les commentaires."
+                )
+
+        return (
+            "CLEAR",
+            "Aucune PR liée ni revendication détectée."
+        )
+
+    except Exception as e:
+
+        return (
+            "UNKNOWN",
+            f"Vérification GitHub impossible : {e}"
+        )
+
+
+# =====================================================
 # API MANUS
 # =====================================================
 
 def manus_request(method, endpoint, **kwargs):
+
     if not MANUS_KEY:
         raise RuntimeError("MANUS_API_KEY manquant")
 
@@ -159,35 +280,49 @@ def manus_request(method, endpoint, **kwargs):
 # =====================================================
 
 def extract_output(messages):
+
     output = []
 
     if not isinstance(messages, list):
         return None
 
     for event in messages:
+
         if not isinstance(event, dict):
             continue
 
-        structured = event.get("structured_output_result")
+        structured = event.get(
+            "structured_output_result"
+        )
 
         if isinstance(structured, dict):
+
             if structured.get("success"):
+
                 value = structured.get("value")
+
                 if value:
                     output.append(str(value))
 
-        assistant = event.get("assistant_message", {})
+        assistant = event.get(
+            "assistant_message", {}
+        )
 
         if isinstance(assistant, dict):
+
             content = assistant.get("content")
 
             if isinstance(content, str):
                 output.append(content)
 
             elif isinstance(content, list):
+
                 for item in content:
+
                     if isinstance(item, dict):
+
                         text = item.get("text")
+
                         if text:
                             output.append(str(text))
 
@@ -207,13 +342,25 @@ def extract_output(messages):
 # =====================================================
 
 def create_task(mission):
-    title = mission.get("title", "Mission sans titre")
+
+    title = mission.get(
+        "title", "Mission sans titre"
+    )
+
     description = mission.get("description", "")
     url = mission.get("url", "")
 
+    analysis = mission.get("analysis", {})
+
+    if not isinstance(analysis, dict):
+        analysis = {}
+
     reward = mission.get(
         "reward",
-        mission.get("reward_usd", 0)
+        mission.get(
+            "reward_usd",
+            analysis.get("reward_estimate", 0)
+        )
     )
 
     currency = mission.get("currency", "USD")
@@ -306,7 +453,8 @@ si la livraison n'a pas réellement été effectuée.
 
     if not task_id:
         raise RuntimeError(
-            "Manus n'a pas retourné de task_id : " + str(data)
+            "Manus n'a pas retourné de task_id : "
+            + str(data)
         )
 
     return data
@@ -317,6 +465,7 @@ si la livraison n'a pas réellement été effectuée.
 # =====================================================
 
 def get_task_status(task_id):
+
     detail = manus_request(
         "GET",
         "/task.detail",
@@ -348,11 +497,13 @@ def get_task_status(task_id):
 
 
 # =====================================================
-# SURVEILLANCE
+# SURVEILLANCE DES MISSIONS EN COURS
 # =====================================================
 
 def monitor_missions(missions):
+
     for mission_id, mission in missions.items():
+
         if not isinstance(mission, dict):
             continue
 
@@ -362,6 +513,7 @@ def monitor_missions(missions):
             continue
 
         try:
+
             result = get_task_status(task_id)
 
             previous = mission.get("manus_status")
@@ -374,6 +526,7 @@ def monitor_missions(missions):
                 mission["last_result"] = result["output"]
 
             if current != previous:
+
                 notify(
                     "🤖 TENA IZY — PROGRESSION\n\n"
                     f"📌 {mission.get('title', 'Mission')}\n"
@@ -381,9 +534,15 @@ def monitor_missions(missions):
                 )
 
             if current in ["completed", "stopped"]:
+
                 if not result["background_jobs"]:
+
                     if mission.get("status") != "READY_FOR_DELIVERY_REVIEW":
-                        mission["status"] = "READY_FOR_DELIVERY_REVIEW"
+
+                        mission["status"] = (
+                            "READY_FOR_DELIVERY_REVIEW"
+                        )
+
                         mission["completed_at"] = now()
 
                         notify(
@@ -394,15 +553,18 @@ def monitor_missions(missions):
                         )
 
             elif current in ["waiting", "requires_input"]:
+
                 mission["status"] = "HUMAN_REQUIRED"
 
                 if previous != current:
+
                     notify(
                         "⚠️ TENA IZY — INTERVENTION HUMAINE\n\n"
                         f"📌 {mission.get('title')}"
                     )
 
             elif current == "error":
+
                 mission["status"] = "FAILED"
 
                 notify(
@@ -411,8 +573,12 @@ def monitor_missions(missions):
                 )
 
         except Exception as e:
+
             mission["last_error"] = str(e)
-            print(f"Erreur mission {mission_id} : {e}")
+
+            print(
+                f"Erreur mission {mission_id} : {e}"
+            )
 
 
 # =====================================================
@@ -420,33 +586,76 @@ def monitor_missions(missions):
 # =====================================================
 
 def start_missions(missions):
+
     if not MANUS_KEY:
         print("MANUS_API_KEY absent.")
         return
 
     started = 0
+    skipped = 0
 
     for mission_id, mission in missions.items():
+
         if started >= MAX_TASKS:
             break
 
         if not isinstance(mission, dict):
             continue
 
-        # CORRECTION :
-        # Autoriser les missions approuvées
-        # ainsi que les missions découvertes.
+        # Ne lancer que les missions nouvelles ou approuvées.
+
         if mission.get("status") not in (
             "DISCOVERED",
             "APPROVED"
         ):
             continue
 
-        # Eviter les doublons Manus
+        # Ne jamais relancer une tâche Manus existante.
+
         if mission.get("manus_task_id"):
             continue
 
+        # Vérification préalable de disponibilité.
+
+        check, reason = check_bounty_availability(
+            mission
+        )
+
+        mission["preflight_check"] = check
+        mission["preflight_reason"] = reason
+        mission["preflight_checked_at"] = now()
+
+        # Mission déjà prise, fermée ou impossible à vérifier.
+
+        if check != "CLEAR":
+
+            skipped += 1
+
+            if check == "PR_EXISTS":
+                mission["status"] = "WAITING_EXTERNAL_PR"
+
+            elif check == "CLAIMED":
+                mission["status"] = "BOUNTY_ALREADY_CLAIMED"
+
+            elif check == "CLOSED":
+                mission["status"] = "CLOSED"
+
+            else:
+                mission["status"] = "PREFLIGHT_REVIEW"
+
+            notify(
+                "⏭️ TENA IZY — MISSION IGNORÉE\n\n"
+                f"📌 {mission.get('title')}\n"
+                f"Motif : {reason}\n\n"
+                "Recherche de la prochaine mission."
+            )
+
+            continue
+
+        # Mission vérifiée : lancement Manus.
+
         try:
+
             result = create_task(mission)
 
             mission["manus_task_id"] = result["task_id"]
@@ -456,16 +665,27 @@ def start_missions(missions):
 
             started += 1
 
+            reward = mission.get(
+                "reward",
+                mission.get(
+                    "reward_usd",
+                    mission.get("analysis", {}).get(
+                        "reward_estimate", 0
+                    )
+                )
+            )
+
             notify(
                 "🚀 TENA IZY — EXÉCUTION DÉMARRÉE\n\n"
                 f"📌 {mission.get('title')}\n"
-                f"💰 {mission.get('reward', 0)} "
+                f"💰 {reward} "
                 f"{mission.get('currency', 'USD')}\n\n"
                 f"🤖 Tâche Manus : {result['task_id']}\n"
                 f"🔗 {mission.get('url', '')}"
             )
 
         except Exception as e:
+
             mission["status"] = "EXECUTION_ERROR"
             mission["error"] = str(e)
 
@@ -476,6 +696,7 @@ def start_missions(missions):
             )
 
     print("Missions démarrées :", started)
+    print("Missions ignorées :", skipped)
 
 
 # =====================================================
@@ -483,8 +704,9 @@ def start_missions(missions):
 # =====================================================
 
 def main():
+
     print("=" * 45)
-    print("TENA IZY — EXECUTION V3")
+    print("TENA IZY — EXECUTION V4")
     print("=" * 45)
 
     db = load_db()
@@ -492,10 +714,14 @@ def main():
 
     print("Nombre de missions :", len(missions))
 
+    # Surveiller les tâches Manus existantes.
     print("Surveillance des tâches Manus...")
+
     monitor_missions(missions)
 
+    # Chercher une nouvelle mission disponible.
     print("Recherche d'une mission à exécuter...")
+
     start_missions(missions)
 
     save_db(db)
@@ -507,10 +733,12 @@ def main():
 
 
 if __name__ == "__main__":
+
     try:
         main()
 
     except Exception as e:
+
         print("ERREUR FATALE :", str(e))
 
         notify(
