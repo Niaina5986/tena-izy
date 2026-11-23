@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-23T06:59:49.635324+00:00",
+  "updated_at": "2026-11-23T08:37:55.660960+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -1428,7 +1428,7 @@
       "updated_at": "2026-11-22T15:23:36Z",
       "labels": [],
       "source": "GitHub",
-      "status": "APPROVED",
+      "status": "IN_PROGRESS",
       "created_in_system": "2026-11-22T15:51:38.664920+00:00",
       "analysis": {
         "id": "6544130800",
@@ -1455,7 +1455,10 @@
         "message_id": 9,
         "sent_at": "2026-11-22T15:55:32.867300+00:00"
       },
-      "approved_at": "AUTO"
+      "approved_at": "AUTO",
+      "manus_task_id": "V5jCUmdSHFws5BErsZ57Qm",
+      "manus_status": "running",
+      "started_at": "2026-11-23T08:37:55.222194+00:00"
     },
     "6544388011": {
       "id": "6544388011",
