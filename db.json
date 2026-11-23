@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-23T11:07:58.417378+00:00",
+  "updated_at": "2026-11-23T12:32:55.647594+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -1428,7 +1428,7 @@
       "updated_at": "2026-11-22T15:23:36Z",
       "labels": [],
       "source": "GitHub",
-      "status": "IN_PROGRESS",
+      "status": "READY_FOR_DELIVERY_REVIEW",
       "created_in_system": "2026-11-22T15:51:38.664920+00:00",
       "analysis": {
         "id": "6544130800",
@@ -1457,8 +1457,11 @@
       },
       "approved_at": "AUTO",
       "manus_task_id": "V5jCUmdSHFws5BErsZ57Qm",
-      "manus_status": "running",
-      "started_at": "2026-11-23T08:37:55.222194+00:00"
+      "manus_status": "stopped",
+      "started_at": "2026-11-23T08:37:55.222194+00:00",
+      "last_checked": "2026-11-23T12:32:28.691032+00:00",
+      "last_result": "**DECISION:** Pas de seconde soumission pour l’instant. Le ticket [#664 est ouvert](https://github.com/bad-antics/lateralus-lang/issues/664), mais une [PR #667](https://github.com/bad-antics/lateralus-lang/pull/667) ouverte par l’auteur de la réclamation contient déjà les livrables demandés. Les règles du dépôt donnent priorité aux soumissions et conditionnent le paiement à la fusion ; je n’ai donc pas créé de doublon ni soumis de changement. [BOUNTIES.md](https://github.com/bad-antics/lateralus-lang/blob/main/BOUNTIES.md)\n\n**REWARD:** La prime récurrente est annoncée à **25 $** dans le ticket et `BOUNTIES.md`, mais elle n’est pas garantie avant acceptation et fusion. La métadonnée de mission indique **0 $** : ces montants sont contradictoires, et aucun paiement ni engagement de paiement n’a été fait.\n\n**ELIGIBILITY:** L’autorisation des agents IA n’est pas explicitée dans les règles consultées. Celles-ci exigent notamment un travail original et une attribution/signature de commit ; je ne peux donc pas confirmer l’éligibilité d’une soumission rédigée par un agent. Depuis Madagascar, GitHub indique que le pays fait partie des régions pouvant recevoir des fonds via GitHub Sponsors, sous réserve de satisfaire aux exigences du service. [Règles de la prime](https://github.com/bad-antics/lateralus-lang/blob/main/BOUNTIES.md) · [Régions GitHub Sponsors](https://docs.github.com/en/sponsors/getting-started-with-github-sponsors/about-github-sponsors)\n\n**PAYMENT_METHOD:** Les règles du dépôt mentionnent GitHub Sponsors, Ko‑fi ou BTC/LN. Le ticket propose Base/USDC, méthode qui n’apparaît pas dans cette liste officielle ; cette différence reste à résoudre. Aucun transfert n’a été effectué.\n\n**WORK_COMPLETED:** Vérification du ticket, des règles, de la PR existante et du protocole InfluxDB ; validation locale de la PR dans un worktree temporaire. Aucun changement n’a été apporté à la branche principale ni soumis.\n\n**FILES_CREATED:** Aucun fichier créé localement. La PR existante contient déjà le [guide](https://github.com/bad-antics/lateralus-lang/blob/d0f1f57a534e536522d999b15b0a9f2fdca49f57/docs/blog/stdlib-influx-line-tutorial.md), l’[exemple](https://github.com/bad-antics/lateralus-lang/blob/d0f1f57a534e536522d999b15b0a9f2fdca49f57/examples/influx_line_tutorial.ltl) et les [tests](https://github.com/bad-antics/lateralus-lang/blob/d0f1f57a534e536522d999b15b0a9f2fdca49f57/tests/stdlib_influx_line_tutorial.ltl), ainsi qu’une page `.ltlml`.\n\n**TESTS:** La génération de documentation a réussi : 52 fichiers construits, 0 échec. La compilation du fichier de tests a réussi, mais le lanceur `lateralus test` a échoué avant leur exécution (`CompileResult` sans attribut `code`). En validation manuelle, 4 des 5 vecteurs passent ; le vecteur d’échappement échoue parce que son attendu omet l’échappement de l’espace après la virgule dans le nom de mesure. La spécification InfluxDB exige bien d’échapper les espaces et les virgules dans ce contexte. Par ailleurs, le fichier de test n’utilise pas les annotations `@test` demandées : il appelle des fonctions `test_*` depuis son propre `main`. [Règles d’échappement InfluxDB](https://docs.influxdata.com/influxdb/v2/reference/syntax/line-protocol/)\n\n**DELIVERY_URL:** Aucune livraison par moi. La soumission visible est la [PR #667](https://github.com/bad-antics/lateralus-lang/pull/667) ; elle est ouverte, pas fusionnée.\n\n**BLOCKERS:** Une soumission concurrente existe déjà ; l’autorisation des agents IA n’est pas établie ; le mode de paiement annoncé ne concorde pas avec les règles du dépôt ; un vecteur échoue et les tests ne sont pas déclarés avec `@test`.\n\nLa documentation se construit, mais la validation d’exécution a révélé un échec concret dans le vecteur d’échappement de la PR existante. Je vérifie maintenant si l’écart vient du résultat attendu ou de l’encodeur, afin de distinguer un test erroné d’un défaut fonctionnel avant de conclure.\n\nLes règles publiées confirment une micro-prime récurrente de 25 $, mais ce n’est pas un paiement garanti : il est lié à la fusion et le dépôt se réserve un droit de refus motivé. La PR #667 est la première soumission visible et porte déjà les fichiers demandés ; je valide maintenant ses tests dans un worktree temporaire pour signaler précisément ce qui est vérifiable, sans créer une soumission concurrente.\n\nLe ticket est toujours ouvert, mais le point décisif est qu’une PR publique liée au ticket (#667) contient déjà exactement ces trois livrables, et qu’elle est ouverte par l’auteur de la réclamation. Je vais vérifier cette PR et les règles de rémunération avant de décider si un travail distinct peut être livré sans doublonner une candidature déjà prioritaire.\n\nLe dépôt est accessible et cloné localement. Je consulte maintenant le ticket et les conditions écrites dans le dépôt, puis je vérifierai si le module demandé existe déjà et comment exécuter ses tests.\n\nLes consignes sont claires. Aucun dépôt n’est actuellement présent dans l’espace de travail ; je vérifie donc d’abord l’état public du ticket, les règles de la prime et l’accès au dépôt, sans soumettre ni engager de paiement.\n\nJe prends en charge la livraison du tutoriel et des tests/documentation demandés, en commençant par vérifier le contenu complet de la mission et l’état du dépôt.",
+      "completed_at": "2026-11-23T12:32:29.118853+00:00"
     },
     "6544388011": {
       "id": "6544388011",
@@ -1772,11 +1775,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:04.000318+00:00",
-      "updated_at": "2026-11-23T06:59:04.000341+00:00"
+      "updated_at": "2026-11-23T06:59:04.000341+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/PG-AGI/toingg-jarvis/issues/13/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:29.909913+00:00"
     },
     "algora:arakoodev/EdgeChains#290": {
       "id": "algora:arakoodev/EdgeChains#290",
@@ -1794,11 +1800,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:04.573892+00:00",
-      "updated_at": "2026-11-23T06:59:04.573907+00:00"
+      "updated_at": "2026-11-23T06:59:04.573907+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/arakoodev/EdgeChains/issues/290/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:30.640482+00:00"
     },
     "algora:onyx-dot-app/onyx#2281": {
       "id": "algora:onyx-dot-app/onyx#2281",
@@ -1816,11 +1825,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:05.128829+00:00",
-      "updated_at": "2026-11-23T06:59:05.128845+00:00"
+      "updated_at": "2026-11-23T06:59:05.128845+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/onyx-dot-app/onyx/issues/2281/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:31.363797+00:00"
     },
     "algora:revertinc/revert#551": {
       "id": "algora:revertinc/revert#551",
@@ -1838,11 +1850,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:05.687561+00:00",
-      "updated_at": "2026-11-23T06:59:05.687579+00:00"
+      "updated_at": "2026-11-23T06:59:05.687579+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/revertinc/revert/issues/551/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:32.180465+00:00"
     },
     "bountyhub:54af5fad-52c7-4dd8-91be-d666a31e5eb7": {
       "id": "bountyhub:54af5fad-52c7-4dd8-91be-d666a31e5eb7",
@@ -1860,11 +1875,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:06.233334+00:00",
-      "updated_at": "2026-11-23T06:59:06.233352+00:00"
+      "updated_at": "2026-11-23T06:59:06.233352+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/gqrx-sdr/gqrx/issues/1445/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:32.902682+00:00"
     },
     "algora:speakers-in-tech/conference-data#10": {
       "id": "algora:speakers-in-tech/conference-data#10",
@@ -1882,11 +1900,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:06.745634+00:00",
-      "updated_at": "2026-11-23T06:59:06.745649+00:00"
+      "updated_at": "2026-11-23T06:59:06.745649+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/speakers-in-tech/conference-data/issues/10/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:33.607460+00:00"
     },
     "algora:flydelabs/flyde#112": {
       "id": "algora:flydelabs/flyde#112",
@@ -1904,11 +1925,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:07.257658+00:00",
-      "updated_at": "2026-11-23T06:59:07.257676+00:00"
+      "updated_at": "2026-11-23T06:59:07.257676+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/flydelabs/flyde/issues/112/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:34.392840+00:00"
     },
     "algora:highlight/highlight#8032": {
       "id": "algora:highlight/highlight#8032",
@@ -1926,11 +1950,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:07.780181+00:00",
-      "updated_at": "2026-11-23T06:59:07.780196+00:00"
+      "updated_at": "2026-11-23T06:59:07.780196+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/highlight/highlight/issues/8032/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:35.125428+00:00"
     },
     "algora:speakers-in-tech/conference-data#4": {
       "id": "algora:speakers-in-tech/conference-data#4",
@@ -1948,11 +1975,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:08.299614+00:00",
-      "updated_at": "2026-11-23T06:59:08.299632+00:00"
+      "updated_at": "2026-11-23T06:59:08.299632+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/speakers-in-tech/conference-data/issues/4/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:35.840837+00:00"
     },
     "algora:speakers-in-tech/conference-data#11": {
       "id": "algora:speakers-in-tech/conference-data#11",
@@ -1970,11 +2000,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:08.838383+00:00",
-      "updated_at": "2026-11-23T06:59:08.838402+00:00"
+      "updated_at": "2026-11-23T06:59:08.838402+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/speakers-in-tech/conference-data/issues/11/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:36.583584+00:00"
     },
     "algora:arakoodev/EdgeChains#273": {
       "id": "algora:arakoodev/EdgeChains#273",
@@ -1992,11 +2025,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:09.341314+00:00",
-      "updated_at": "2026-11-23T06:59:09.341337+00:00"
+      "updated_at": "2026-11-23T06:59:09.341337+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/arakoodev/EdgeChains/issues/273/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:37.382000+00:00"
     },
     "algora:lablab-ai/community-content#462": {
       "id": "algora:lablab-ai/community-content#462",
@@ -2014,11 +2050,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:09.878524+00:00",
-      "updated_at": "2026-11-23T06:59:09.878541+00:00"
+      "updated_at": "2026-11-23T06:59:09.878541+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/lablab-ai/community-content/issues/462/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:38.122822+00:00"
     },
     "algora:getdozer/dozer#1659": {
       "id": "algora:getdozer/dozer#1659",
@@ -2036,11 +2075,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:10.395461+00:00",
-      "updated_at": "2026-11-23T06:59:10.395478+00:00"
+      "updated_at": "2026-11-23T06:59:10.395478+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/getdozer/dozer/issues/1659/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:38.861141+00:00"
     },
     "algora:arakoodev/EdgeChains#279": {
       "id": "algora:arakoodev/EdgeChains#279",
@@ -2058,11 +2100,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:10.961439+00:00",
-      "updated_at": "2026-11-23T06:59:10.961453+00:00"
+      "updated_at": "2026-11-23T06:59:10.961453+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/arakoodev/EdgeChains/issues/279/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:39.598166+00:00"
     },
     "algora:golang-cafe/job-board#108": {
       "id": "algora:golang-cafe/job-board#108",
@@ -2080,11 +2125,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:11.477124+00:00",
-      "updated_at": "2026-11-23T06:59:11.477138+00:00"
+      "updated_at": "2026-11-23T06:59:11.477138+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/golang-cafe/job-board/issues/108/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:40.438002+00:00"
     },
     "algora:revertinc/revert#372": {
       "id": "algora:revertinc/revert#372",
@@ -2102,11 +2150,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:12.008575+00:00",
-      "updated_at": "2026-11-23T06:59:12.008593+00:00"
+      "updated_at": "2026-11-23T06:59:12.008593+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/revertinc/revert/issues/372/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:41.192466+00:00"
     },
     "algora:caley-io/marketing#1": {
       "id": "algora:caley-io/marketing#1",
@@ -2124,11 +2175,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:12.515174+00:00",
-      "updated_at": "2026-11-23T06:59:12.515190+00:00"
+      "updated_at": "2026-11-23T06:59:12.515190+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/caley-io/marketing/issues/1/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:41.912164+00:00"
     },
     "algora:golang-cafe/job-board#91": {
       "id": "algora:golang-cafe/job-board#91",
@@ -2146,11 +2200,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:13.188128+00:00",
-      "updated_at": "2026-11-23T06:59:13.188143+00:00"
+      "updated_at": "2026-11-23T06:59:13.188143+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/golang-cafe/job-board/issues/91/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:42.607139+00:00"
     },
     "algora:golang-cafe/job-board#97": {
       "id": "algora:golang-cafe/job-board#97",
@@ -2168,11 +2225,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:13.702807+00:00",
-      "updated_at": "2026-11-23T06:59:13.702824+00:00"
+      "updated_at": "2026-11-23T06:59:13.702824+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/golang-cafe/job-board/issues/97/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:43.314857+00:00"
     },
     "algora:TheSolaAI/sola-application#157": {
       "id": "algora:TheSolaAI/sola-application#157",
@@ -2190,11 +2250,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:14.222306+00:00",
-      "updated_at": "2026-11-23T06:59:14.222321+00:00"
+      "updated_at": "2026-11-23T06:59:14.222321+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/TheSolaAI/sola-application/issues/157/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:44.061421+00:00"
     },
     "algora:javelin-anticheat/py-workedtask#2": {
       "id": "algora:javelin-anticheat/py-workedtask#2",
@@ -2212,11 +2275,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:14.741221+00:00",
-      "updated_at": "2026-11-23T06:59:14.741236+00:00"
+      "updated_at": "2026-11-23T06:59:14.741236+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/javelin-anticheat/py-workedtask/issues/2/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:44.766766+00:00"
     },
     "algora:getdozer/dozer#1690": {
       "id": "algora:getdozer/dozer#1690",
@@ -2234,11 +2300,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:15.247332+00:00",
-      "updated_at": "2026-11-23T06:59:15.247349+00:00"
+      "updated_at": "2026-11-23T06:59:15.247349+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/getdozer/dozer/issues/1690/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:45.504811+00:00"
     },
     "algora:javelin-anticheat/py-workedtask#4": {
       "id": "algora:javelin-anticheat/py-workedtask#4",
@@ -2256,11 +2325,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:15.758351+00:00",
-      "updated_at": "2026-11-23T06:59:15.758366+00:00"
+      "updated_at": "2026-11-23T06:59:15.758366+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/javelin-anticheat/py-workedtask/issues/4/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:46.298632+00:00"
     },
     "algora:golang-cafe/job-board#74": {
       "id": "algora:golang-cafe/job-board#74",
@@ -2278,11 +2350,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:16.272147+00:00",
-      "updated_at": "2026-11-23T06:59:16.272163+00:00"
+      "updated_at": "2026-11-23T06:59:16.272163+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/golang-cafe/job-board/issues/74/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:47.002956+00:00"
     },
     "algora:tryabby/abby#68": {
       "id": "algora:tryabby/abby#68",
@@ -2300,11 +2375,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:16.786727+00:00",
-      "updated_at": "2026-11-23T06:59:16.786744+00:00"
+      "updated_at": "2026-11-23T06:59:16.786744+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/tryabby/abby/issues/68/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:47.793764+00:00"
     },
     "algora:coollabsio/coolify#7596": {
       "id": "algora:coollabsio/coolify#7596",
@@ -2322,11 +2400,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:17.323263+00:00",
-      "updated_at": "2026-11-23T06:59:17.323285+00:00"
+      "updated_at": "2026-11-23T06:59:17.323285+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/coollabsio/coolify/issues/7596/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:48.549658+00:00"
     },
     "algora:coollabsio/coolify#8266": {
       "id": "algora:coollabsio/coolify#8266",
@@ -2344,11 +2425,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:17.836146+00:00",
-      "updated_at": "2026-11-23T06:59:17.836162+00:00"
+      "updated_at": "2026-11-23T06:59:17.836162+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/coollabsio/coolify/issues/8266/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:49.300689+00:00"
     },
     "bountyhub:27c3cfe0-da9e-4192-848a-b676402de81c": {
       "id": "bountyhub:27c3cfe0-da9e-4192-848a-b676402de81c",
@@ -2366,11 +2450,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:18.363952+00:00",
-      "updated_at": "2026-11-23T06:59:18.363970+00:00"
+      "updated_at": "2026-11-23T06:59:18.363970+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 404 Client Error: Not Found for url: https://api.github.com/repos/microg/GmsCore/issues/580/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:50.000812+00:00"
     },
     "algora:BAWES-Universe/studenthub#55": {
       "id": "algora:BAWES-Universe/studenthub#55",
@@ -2388,11 +2475,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:18.871462+00:00",
-      "updated_at": "2026-11-23T06:59:18.871478+00:00"
+      "updated_at": "2026-11-23T06:59:18.871478+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/BAWES-Universe/studenthub/issues/55/pulls?per_page=100",
+      "preflight_checked_at": "2026-11-23T12:32:50.778555+00:00"
     },
     "algora:BAWES-Universe/workadventure-universe#1": {
       "id": "algora:BAWES-Universe/workadventure-universe#1",
@@ -2410,11 +2500,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:19.381212+00:00",
-      "updated_at": "2026-11-23T06:59:19.381228+00:00"
+      "updated_at": "2026-11-23T06:59:19.381228+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/BAWES-Universe/workadventure-universe/issues/1",
+      "preflight_checked_at": "2026-11-23T12:32:51.298014+00:00"
     },
     "algora:tailcallhq/rust-grpc#44": {
       "id": "algora:tailcallhq/rust-grpc#44",
@@ -2432,11 +2525,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:19.922850+00:00",
-      "updated_at": "2026-11-23T06:59:19.922867+00:00"
+      "updated_at": "2026-11-23T06:59:19.922867+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/tailcallhq/rust-grpc/issues/44",
+      "preflight_checked_at": "2026-11-23T12:32:51.764953+00:00"
     },
     "algora:zio/zio#9211": {
       "id": "algora:zio/zio#9211",
@@ -2454,11 +2550,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:20.428048+00:00",
-      "updated_at": "2026-11-23T06:59:20.428064+00:00"
+      "updated_at": "2026-11-23T06:59:20.428064+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/zio/zio/issues/9211",
+      "preflight_checked_at": "2026-11-23T12:32:52.361521+00:00"
     },
     "algora:getdozer/dozer#1653": {
       "id": "algora:getdozer/dozer#1653",
@@ -2476,11 +2575,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:20.935825+00:00",
-      "updated_at": "2026-11-23T06:59:20.935843+00:00"
+      "updated_at": "2026-11-23T06:59:20.935843+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/getdozer/dozer/issues/1653",
+      "preflight_checked_at": "2026-11-23T12:32:53.002555+00:00"
     },
     "bountyhub:d1706bb0-ff15-433a-a9bc-41b233fab03a": {
       "id": "bountyhub:d1706bb0-ff15-433a-a9bc-41b233fab03a",
@@ -2498,11 +2600,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:21.456549+00:00",
-      "updated_at": "2026-11-23T06:59:21.456565+00:00"
+      "updated_at": "2026-11-23T06:59:21.456565+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/gqrx-sdr/gqrx/issues/1336",
+      "preflight_checked_at": "2026-11-23T12:32:53.448391+00:00"
     },
     "bountyhub:521afa31-6c6f-4d2c-becc-c6b14318d2b4": {
       "id": "bountyhub:521afa31-6c6f-4d2c-becc-c6b14318d2b4",
@@ -2520,11 +2625,14 @@
       "acceptance_type": "human-review",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
+      "status": "PREFLIGHT_REVIEW",
       "manus_task_id": null,
       "manus_status": null,
       "created_at": "2026-11-23T06:59:22.089499+00:00",
-      "updated_at": "2026-11-23T06:59:22.089516+00:00"
+      "updated_at": "2026-11-23T06:59:22.089516+00:00",
+      "preflight_check": "UNKNOWN",
+      "preflight_reason": "Vérification GitHub impossible : 403 Client Error: rate limit exceeded for url: https://api.github.com/repos/microg/GmsCore/issues/2994",
+      "preflight_checked_at": "2026-11-23T12:32:53.915365+00:00"
     },
     "bountybook:734626a0-26b5-478b-b9cf-fb575aea8adc": {
       "id": "bountybook:734626a0-26b5-478b-b9cf-fb575aea8adc",
@@ -2542,11 +2650,15 @@
       "acceptance_type": "machine",
       "claims_open": true,
       "expires": null,
-      "status": "DISCOVERED",
-      "manus_task_id": null,
-      "manus_status": null,
+      "status": "IN_PROGRESS",
+      "manus_task_id": "gDjRiAR9nQEHDe4ncDS3X9",
+      "manus_status": "running",
       "created_at": "2026-11-23T06:59:22.599292+00:00",
-      "updated_at": "2026-11-23T06:59:22.599310+00:00"
+      "updated_at": "2026-11-23T06:59:22.599310+00:00",
+      "preflight_check": "CLEAR",
+      "preflight_reason": "Mission non issue GitHub",
+      "preflight_checked_at": "2026-11-23T12:32:54.307445+00:00",
+      "started_at": "2026-11-23T12:32:55.219317+00:00"
     },
     "bountybook:193daf43-6436-4456-a028-dcb3149a2b95": {
       "id": "bountybook:193daf43-6436-4456-a028-dcb3149a2b95",
