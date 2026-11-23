@@ -36,20 +36,25 @@ SESSION = requests.Session()
 
 
 # =====================================================
-# OUTILS
+# DATE
 # =====================================================
 
 def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+# =====================================================
+# TELEGRAM
+# =====================================================
+
 def notify(message):
 
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram non configuré.")
+        print("Telegram non configure.")
         return
 
     try:
+
         url = (
             f"https://api.telegram.org/"
             f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -67,11 +72,12 @@ def notify(message):
         response.raise_for_status()
 
     except Exception as exc:
+
         print(f"Erreur Telegram : {exc}")
 
 
 # =====================================================
-# BASE DE DONNÉES
+# BASE DE DONNEES
 # =====================================================
 
 def load_db():
@@ -103,6 +109,7 @@ def load_db():
         db["missions"] = converted
 
     elif not isinstance(missions, dict):
+
         raise ValueError("Champ missions invalide.")
 
     return db
@@ -133,8 +140,9 @@ def save_db(db):
 def manus_get(endpoint, params=None):
 
     if not MANUS_API_KEY:
+
         raise RuntimeError(
-            "MANUS_API_KEY absent dans les variables."
+            "MANUS_API_KEY absent."
         )
 
     url = f"{MANUS_API}{endpoint}"
@@ -149,21 +157,20 @@ def manus_get(endpoint, params=None):
     if response.status_code == 401:
 
         raise RuntimeError(
-            "MANUS 401 : clé API absente, invalide, "
-            "révoquée ou incorrecte. Vérifier le secret "
-            "MANUS_API_KEY dans GitHub."
+            "MANUS 401 : cle API invalide, absente "
+            "ou revoquee. Verifier MANUS_API_KEY."
         )
 
     if response.status_code == 403:
 
         raise RuntimeError(
-            "MANUS 403 : accès refusé pour cette ressource."
+            "MANUS 403 : acces refuse."
         )
 
     if response.status_code == 429:
 
         raise RuntimeError(
-            "MANUS 429 : limite de requêtes atteinte."
+            "MANUS 429 : limite API atteinte."
         )
 
     response.raise_for_status()
@@ -172,10 +179,8 @@ def manus_get(endpoint, params=None):
 
     if isinstance(data, dict) and data.get("ok") is False:
 
-        error = data.get("error", {})
-
         raise RuntimeError(
-            f"Erreur Manus : {error}"
+            f"Erreur Manus : {data.get('error')}"
         )
 
     return data
@@ -199,8 +204,6 @@ def get_manus_task(task_id):
 
     task = detail.get("task", detail)
 
-    messages = []
-
     if isinstance(messages_response, dict):
 
         messages = messages_response.get("messages", [])
@@ -212,6 +215,10 @@ def get_manus_task(task_id):
             if isinstance(data, dict):
                 messages = data.get("messages", [])
 
+    else:
+
+        messages = []
+
     if not isinstance(messages, list):
         messages = []
 
@@ -219,7 +226,7 @@ def get_manus_task(task_id):
 
 
 # =====================================================
-# EXTRACTION DES FICHIERS
+# EXTRACTION DES PIECES JOINTES
 # =====================================================
 
 def collect_attachments(messages):
@@ -278,7 +285,7 @@ def collect_attachments(messages):
 
 
 # =====================================================
-# SÉCURISATION DES NOMS
+# SECURISATION DES NOMS
 # =====================================================
 
 def safe_name(value):
@@ -307,7 +314,7 @@ def safe_mission_id(value):
 
 
 # =====================================================
-# TÉLÉCHARGEMENT
+# TELECHARGEMENT DES FICHIERS
 # =====================================================
 
 def download_file(url, destination):
@@ -339,19 +346,20 @@ def download_file(url, destination):
                 if total > MAX_FILE_SIZE:
 
                     raise ValueError(
-                        "Fichier supérieur à 10 MB."
+                        "Fichier superieur a 10 MB."
                     )
 
                 file.write(chunk)
 
     if total == 0:
+
         raise ValueError("Fichier vide.")
 
     return total
 
 
 # =====================================================
-# VALIDATION
+# VALIDATION DES FICHIERS
 # =====================================================
 
 def validate_file(path):
@@ -397,12 +405,16 @@ def validate_file(path):
 
             return False, "Fichier vide"
 
-        return True, "Fichier téléchargé, format non vérifié"
+        return True, "Format non verifie automatiquement"
 
     except Exception as exc:
 
         return False, str(exc)
 
+
+# =====================================================
+# EMPREINTE SHA256
+# =====================================================
 
 def sha256_file(path):
 
@@ -421,7 +433,7 @@ def sha256_file(path):
 
 
 # =====================================================
-# TRAITEMENT DES MISSIONS
+# TRAITEMENT D'UNE MISSION
 # =====================================================
 
 def process_mission(mission_id, mission):
@@ -431,9 +443,13 @@ def process_mission(mission_id, mission):
     if not task_id:
         return False
 
-    print(f"Vérification mission : {mission_id}")
+    print(f"Verification mission : {mission_id}")
 
     previous_status = mission.get("delivery_status")
+
+    # ---------------------------------------------
+    # RECUPERATION MANUS
+    # ---------------------------------------------
 
     try:
 
@@ -446,25 +462,40 @@ def process_mission(mission_id, mission):
         mission["delivery_last_error"] = str(exc)
         mission["delivery_last_checked"] = now()
 
+        if "401" in str(exc):
+
+            mission["delivery_status"] = "MANUS_AUTH_ERROR"
+
+        else:
+
+            mission["delivery_status"] = "MANUS_API_ERROR"
+
         return True
 
-    status = str(task.get("status", "")).lower()
+    status = str(
+        task.get("status", "")
+    ).lower()
 
-    background_jobs = task.get(
-        "has_running_background_jobs",
-        False
+    background_jobs = bool(
+        task.get("has_running_background_jobs", False)
     )
 
     mission["manus_status"] = status
     mission["delivery_last_checked"] = now()
 
     # ---------------------------------------------
-    # TÂCHE EN COURS
+    # TACHE EN COURS
     # ---------------------------------------------
 
-    if status in ("running", "waiting") or background_jobs:
+    if status in ("running", "waiting"):
 
         mission["delivery_status"] = "MANUS_RUNNING"
+
+        return True
+
+    if background_jobs:
+
+        mission["delivery_status"] = "MANUS_BACKGROUND_RUNNING"
 
         return True
 
@@ -487,7 +518,7 @@ def process_mission(mission_id, mission):
         return True
 
     # ---------------------------------------------
-    # INTERVENTION HUMAINE
+    # BESOIN D'INTERVENTION
     # ---------------------------------------------
 
     if status == "requires_input":
@@ -514,14 +545,8 @@ def process_mission(mission_id, mission):
 
         return True
 
-    if background_jobs:
-
-        mission["delivery_status"] = "MANUS_BACKGROUND_RUNNING"
-
-        return True
-
     # ---------------------------------------------
-    # RECHERCHER LES FICHIERS
+    # RECHERCHE DES FICHIERS
     # ---------------------------------------------
 
     attachments = collect_attachments(messages)
@@ -534,18 +559,21 @@ def process_mission(mission_id, mission):
 
             notify(
                 f"⚠️ TENA IZY\n"
-                f"Manus a terminé, mais aucun fichier "
-                f"récupérable n'a été trouvé.\n"
+                f"Manus a termine, mais aucun fichier "
+                f"recuperable n'a ete trouve.\n"
                 f"Mission : {mission_id}"
             )
 
         return True
 
     # ---------------------------------------------
-    # DOSSIER
+    # CREATION DU DOSSIER
     # ---------------------------------------------
 
-    folder = DELIVERY_DIR / safe_mission_id(mission_id)
+    folder = (
+        DELIVERY_DIR /
+        safe_mission_id(mission_id)
+    )
 
     folder.mkdir(
         parents=True,
@@ -556,6 +584,11 @@ def process_mission(mission_id, mission):
         "delivery_files",
         []
     )
+
+    if not isinstance(records, list):
+
+        records = []
+        mission["delivery_files"] = records
 
     known = set()
 
@@ -574,7 +607,7 @@ def process_mission(mission_id, mission):
     new_files = 0
 
     # ---------------------------------------------
-    # TÉLÉCHARGER LES FICHIERS
+    # TELECHARGEMENT
     # ---------------------------------------------
 
     for attachment in attachments:
@@ -634,7 +667,7 @@ def process_mission(mission_id, mission):
             new_files += 1
 
             print(
-                f"Fichier récupéré : {filename}"
+                f"Fichier recupere : {destination.name}"
             )
 
             if not valid:
@@ -654,7 +687,7 @@ def process_mission(mission_id, mission):
             )
 
     # ---------------------------------------------
-    # RÉSULTAT
+    # RESULTAT DU CONTROLE
     # ---------------------------------------------
 
     if errors:
@@ -666,7 +699,7 @@ def process_mission(mission_id, mission):
 
             notify(
                 f"⚠️ TENA IZY\n"
-                f"Fichiers à vérifier.\n"
+                f"Fichiers a verifier.\n"
                 f"Mission : {mission_id}\n"
                 + "\n".join(errors)
             )
@@ -679,50 +712,5 @@ def process_mission(mission_id, mission):
 
         return True
 
-    mission["delivery_status"] = "ARCHIVED_IN_GITHUB_PENDING_PUSH"
-    mission["delivery_files_count"] = len(records)
-    mission["delivery_updated_at"] = now()
-
-    if previous_status != "ARCHIVED_IN_GITHUB_PENDING_PUSH":
-
-        notify(
-            f"📦 TENA IZY\n"
-            f"Fichiers récupérés et contrôlés.\n"
-            f"Mission : {mission_id}\n"
-            f"Nouveaux fichiers : {new_files}\n"
-            f"Total : {len(records)}\n"
-            f"Archivage GitHub en attente."
-        )
-
-    return True
-
-
-# =====================================================
-# PROGRAMME PRINCIPAL
-# =====================================================
-
-def main():
-
-    print("===================================")
-    print("TENA IZY - DELIVERY AGENT")
-    print("===================================")
-
-    if not MANUS_API_KEY:
-
-        raise RuntimeError(
-            "MANUS_API_KEY absent."
-        )
-
-    DELIVERY_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    db = load_db()
-
-    missions = db.get("missions", {})
-
-    processed = 0
-    errors = 0
-
-    for mission_id, mission in
+    # ---------------------------------------------
+    # ARCH
