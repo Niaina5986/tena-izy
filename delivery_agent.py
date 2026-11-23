@@ -9,9 +9,9 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 
-# =========================================================
+# =====================================================
 # CONFIGURATION
-# =========================================================
+# =====================================================
 
 ROOT = Path(__file__).resolve().parent
 
@@ -20,30 +20,31 @@ DELIVERY_DIR = ROOT / "deliveries"
 
 MANUS_API = "https://api.manus.ai/v2"
 
-MANUS_API_KEY = os.getenv("MANUS_API_KEY", "")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+MANUS_API_KEY = os.getenv("MANUS_API_KEY", "").strip()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 TIMEOUT = 60
 
 HEADERS = {
-    "x-api-key": MANUS_API_KEY,
+    "x-manus-api-key": MANUS_API_KEY,
     "Content-Type": "application/json"
 }
 
 SESSION = requests.Session()
 
 
-# =========================================================
+# =====================================================
 # OUTILS
-# =========================================================
+# =====================================================
 
 def now():
     return datetime.now(timezone.utc).isoformat()
 
 
 def notify(message):
+
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Telegram non configuré.")
         return
@@ -69,7 +70,12 @@ def notify(message):
         print(f"Erreur Telegram : {exc}")
 
 
+# =====================================================
+# BASE DE DONNÉES
+# =====================================================
+
 def load_db():
+
     if not DB_FILE.exists():
         raise FileNotFoundError("db.json introuvable.")
 
@@ -82,10 +88,13 @@ def load_db():
     missions = db.get("missions", {})
 
     if isinstance(missions, list):
+
         converted = {}
 
         for mission in missions:
+
             if isinstance(mission, dict):
+
                 mission_id = str(mission.get("id", ""))
 
                 if mission_id:
@@ -94,17 +103,19 @@ def load_db():
         db["missions"] = converted
 
     elif not isinstance(missions, dict):
-        raise ValueError("Le champ missions est invalide.")
+        raise ValueError("Champ missions invalide.")
 
     return db
 
 
 def save_db(db):
+
     db["updated_at"] = now()
 
     temporary = DB_FILE.with_suffix(".tmp")
 
     with open(temporary, "w", encoding="utf-8") as file:
+
         json.dump(
             db,
             file,
@@ -115,13 +126,16 @@ def save_db(db):
     temporary.replace(DB_FILE)
 
 
-# =========================================================
+# =====================================================
 # API MANUS
-# =========================================================
+# =====================================================
 
 def manus_get(endpoint, params=None):
+
     if not MANUS_API_KEY:
-        raise RuntimeError("MANUS_API_KEY absent.")
+        raise RuntimeError(
+            "MANUS_API_KEY absent dans les variables."
+        )
 
     url = f"{MANUS_API}{endpoint}"
 
@@ -132,18 +146,49 @@ def manus_get(endpoint, params=None):
         timeout=TIMEOUT
     )
 
+    if response.status_code == 401:
+
+        raise RuntimeError(
+            "MANUS 401 : clé API absente, invalide, "
+            "révoquée ou incorrecte. Vérifier le secret "
+            "MANUS_API_KEY dans GitHub."
+        )
+
+    if response.status_code == 403:
+
+        raise RuntimeError(
+            "MANUS 403 : accès refusé pour cette ressource."
+        )
+
+    if response.status_code == 429:
+
+        raise RuntimeError(
+            "MANUS 429 : limite de requêtes atteinte."
+        )
+
     response.raise_for_status()
 
-    return response.json()
+    data = response.json()
+
+    if isinstance(data, dict) and data.get("ok") is False:
+
+        error = data.get("error", {})
+
+        raise RuntimeError(
+            f"Erreur Manus : {error}"
+        )
+
+    return data
 
 
 def get_manus_task(task_id):
+
     detail = manus_get(
         "/task.detail",
         {"task_id": task_id}
     )
 
-    messages = manus_get(
+    messages_response = manus_get(
         "/task.listMessages",
         {
             "task_id": task_id,
@@ -154,27 +199,31 @@ def get_manus_task(task_id):
 
     task = detail.get("task", detail)
 
-    if isinstance(messages, dict):
-        message_list = messages.get("messages", [])
+    messages = []
 
-        if not message_list:
-            data = messages.get("data", {})
-            message_list = data.get("messages", [])
+    if isinstance(messages_response, dict):
 
-    else:
-        message_list = []
+        messages = messages_response.get("messages", [])
 
-    if not isinstance(message_list, list):
-        message_list = []
+        if not messages:
 
-    return task, message_list
+            data = messages_response.get("data", {})
+
+            if isinstance(data, dict):
+                messages = data.get("messages", [])
+
+    if not isinstance(messages, list):
+        messages = []
+
+    return task, messages
 
 
-# =========================================================
-# EXTRACTION DES FICHIERS MANUS
-# =========================================================
+# =====================================================
+# EXTRACTION DES FICHIERS
+# =====================================================
 
 def collect_attachments(messages):
+
     attachments = []
     seen = set()
 
@@ -206,13 +255,10 @@ def collect_attachments(messages):
             if not url or not url.startswith("https://"):
                 continue
 
-            file_uid = item.get("file_uid")
-            version_uid = item.get("version_uid")
-
             identity = (
-                str(file_uid or ""),
-                str(version_uid or ""),
-                str(item.get("filename", ""))
+                str(item.get("file_uid") or ""),
+                str(item.get("version_uid") or ""),
+                str(item.get("filename") or "")
             )
 
             if identity in seen:
@@ -223,19 +269,20 @@ def collect_attachments(messages):
             attachments.append({
                 "url": url,
                 "filename": item.get("filename", "fichier"),
-                "file_uid": file_uid,
-                "version_uid": version_uid,
+                "file_uid": item.get("file_uid"),
+                "version_uid": item.get("version_uid"),
                 "content_type": item.get("content_type")
             })
 
     return attachments
 
 
-# =========================================================
-# SÉCURITÉ DES NOMS DE FICHIERS
-# =========================================================
+# =====================================================
+# SÉCURISATION DES NOMS
+# =====================================================
 
 def safe_name(value):
+
     value = str(value or "fichier")
 
     value = value.replace("\\", "/")
@@ -251,6 +298,7 @@ def safe_name(value):
 
 
 def safe_mission_id(value):
+
     return re.sub(
         r"[^a-zA-Z0-9_-]",
         "_",
@@ -258,11 +306,12 @@ def safe_mission_id(value):
     )
 
 
-# =========================================================
+# =====================================================
 # TÉLÉCHARGEMENT
-# =========================================================
+# =====================================================
 
 def download_file(url, destination):
+
     total = 0
 
     destination.parent.mkdir(
@@ -288,8 +337,9 @@ def download_file(url, destination):
                 total += len(chunk)
 
                 if total > MAX_FILE_SIZE:
+
                     raise ValueError(
-                        "Fichier trop volumineux : limite 10 MB."
+                        "Fichier supérieur à 10 MB."
                     )
 
                 file.write(chunk)
@@ -300,11 +350,12 @@ def download_file(url, destination):
     return total
 
 
-# =========================================================
-# VALIDATION DES FICHIERS
-# =========================================================
+# =====================================================
+# VALIDATION
+# =====================================================
 
 def validate_file(path):
+
     extension = path.suffix.lower()
 
     try:
@@ -342,23 +393,19 @@ def validate_file(path):
 
             return True, "Fichier texte lisible"
 
-        if extension in (".zip", ".pdf", ".png", ".jpg", ".jpeg"):
-
-            if path.stat().st_size == 0:
-                return False, "Fichier vide"
-
-            return True, "Fichier téléchargé, contenu non vérifié"
-
         if path.stat().st_size == 0:
+
             return False, "Fichier vide"
 
         return True, "Fichier téléchargé, format non vérifié"
 
     except Exception as exc:
+
         return False, str(exc)
 
 
 def sha256_file(path):
+
     digest = hashlib.sha256()
 
     with open(path, "rb") as file:
@@ -367,14 +414,15 @@ def sha256_file(path):
             lambda: file.read(8192),
             b""
         ):
+
             digest.update(chunk)
 
     return digest.hexdigest()
 
 
-# =========================================================
-# TRAITEMENT D'UNE MISSION
-# =========================================================
+# =====================================================
+# TRAITEMENT DES MISSIONS
+# =====================================================
 
 def process_mission(mission_id, mission):
 
@@ -388,6 +436,7 @@ def process_mission(mission_id, mission):
     previous_status = mission.get("delivery_status")
 
     try:
+
         task, messages = get_manus_task(task_id)
 
     except Exception as exc:
@@ -409,9 +458,9 @@ def process_mission(mission_id, mission):
     mission["manus_status"] = status
     mission["delivery_last_checked"] = now()
 
-    # -----------------------------------------------------
+    # ---------------------------------------------
     # TÂCHE EN COURS
-    # -----------------------------------------------------
+    # ---------------------------------------------
 
     if status in ("running", "waiting") or background_jobs:
 
@@ -419,9 +468,9 @@ def process_mission(mission_id, mission):
 
         return True
 
-    # -----------------------------------------------------
+    # ---------------------------------------------
     # ERREUR MANUS
-    # -----------------------------------------------------
+    # ---------------------------------------------
 
     if status == "error":
 
@@ -431,14 +480,15 @@ def process_mission(mission_id, mission):
 
             notify(
                 f"❌ TENA IZY\n"
-                f"Erreur Manus pour la mission {mission_id}."
+                f"Erreur Manus.\n"
+                f"Mission : {mission_id}"
             )
 
         return True
 
-    # -----------------------------------------------------
+    # ---------------------------------------------
     # INTERVENTION HUMAINE
-    # -----------------------------------------------------
+    # ---------------------------------------------
 
     if status == "requires_input":
 
@@ -454,9 +504,9 @@ def process_mission(mission_id, mission):
 
         return True
 
-    # -----------------------------------------------------
-    # ATTENDRE LA FIN RÉELLE
-    # -----------------------------------------------------
+    # ---------------------------------------------
+    # ATTENDRE LA FIN
+    # ---------------------------------------------
 
     if status not in ("completed", "stopped"):
 
@@ -470,9 +520,9 @@ def process_mission(mission_id, mission):
 
         return True
 
-    # -----------------------------------------------------
-    # RECHERCHER LES PIÈCES JOINTES
-    # -----------------------------------------------------
+    # ---------------------------------------------
+    # RECHERCHER LES FICHIERS
+    # ---------------------------------------------
 
     attachments = collect_attachments(messages)
 
@@ -491,9 +541,9 @@ def process_mission(mission_id, mission):
 
         return True
 
-    # -----------------------------------------------------
-    # DOSSIER DE LIVRAISON
-    # -----------------------------------------------------
+    # ---------------------------------------------
+    # DOSSIER
+    # ---------------------------------------------
 
     folder = DELIVERY_DIR / safe_mission_id(mission_id)
 
@@ -520,12 +570,12 @@ def process_mission(mission_id, mission):
             str(record.get("filename") or "")
         ))
 
-    new_files = 0
     errors = []
+    new_files = 0
 
-    # -----------------------------------------------------
-    # TÉLÉCHARGER ET CONTRÔLER
-    # -----------------------------------------------------
+    # ---------------------------------------------
+    # TÉLÉCHARGER LES FICHIERS
+    # ---------------------------------------------
 
     for attachment in attachments:
 
@@ -545,6 +595,7 @@ def process_mission(mission_id, mission):
         destination = folder / filename
 
         if destination.exists():
+
             destination = folder / (
                 f"{destination.stem}_"
                 f"{len(records) + 1}"
@@ -568,9 +619,7 @@ def process_mission(mission_id, mission):
                 "filename": destination.name,
                 "file_uid": attachment.get("file_uid"),
                 "version_uid": attachment.get("version_uid"),
-                "path": str(
-                    destination.relative_to(ROOT)
-                ),
+                "path": str(destination.relative_to(ROOT)),
                 "size": size,
                 "sha256": checksum,
                 "valid": valid,
@@ -581,17 +630,18 @@ def process_mission(mission_id, mission):
             records.append(record)
 
             known.add(identity)
+
             new_files += 1
 
+            print(
+                f"Fichier récupéré : {filename}"
+            )
+
             if not valid:
+
                 errors.append(
                     f"{filename} : {validation_message}"
                 )
-
-            print(
-                f"Fichier récupéré : {filename} "
-                f"({size} octets)"
-            )
 
         except Exception as exc:
 
@@ -600,12 +650,12 @@ def process_mission(mission_id, mission):
             )
 
             print(
-                f"Erreur téléchargement {filename} : {exc}"
+                f"Erreur fichier {filename} : {exc}"
             )
 
-    # -----------------------------------------------------
+    # ---------------------------------------------
     # RÉSULTAT
-    # -----------------------------------------------------
+    # ---------------------------------------------
 
     if errors:
 
@@ -616,7 +666,7 @@ def process_mission(mission_id, mission):
 
             notify(
                 f"⚠️ TENA IZY\n"
-                f"Certains fichiers nécessitent une vérification.\n"
+                f"Fichiers à vérifier.\n"
                 f"Mission : {mission_id}\n"
                 + "\n".join(errors)
             )
@@ -647,9 +697,9 @@ def process_mission(mission_id, mission):
     return True
 
 
-# =========================================================
+# =====================================================
 # PROGRAMME PRINCIPAL
-# =========================================================
+# =====================================================
 
 def main():
 
@@ -658,8 +708,9 @@ def main():
     print("===================================")
 
     if not MANUS_API_KEY:
+
         raise RuntimeError(
-            "La variable MANUS_API_KEY est absente."
+            "MANUS_API_KEY absent."
         )
 
     DELIVERY_DIR.mkdir(
@@ -672,41 +723,6 @@ def main():
     missions = db.get("missions", {})
 
     processed = 0
+    errors = 0
 
-    for mission_id, mission in missions.items():
-
-        if not isinstance(mission, dict):
-            continue
-
-        if not mission.get("manus_task_id"):
-            continue
-
-        try:
-
-            changed = process_mission(
-                mission_id,
-                mission
-            )
-
-            if changed:
-                processed += 1
-
-        except Exception as exc:
-
-            print(
-                f"Erreur mission {mission_id} : {exc}"
-            )
-
-            mission["delivery_last_error"] = str(exc)
-            mission["delivery_last_checked"] = now()
-
-    save_db(db)
-
-    print("-----------------------------------")
-    print(f"Missions vérifiées : {processed}")
-    print("Delivery Agent terminé.")
-    print("-----------------------------------")
-
-
-if __name__ == "__main__":
-    main()
+    for mission_id, mission in
