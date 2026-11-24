@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-24T01:54:41.728621+00:00",
+  "updated_at": "2026-11-24T07:52:00.371938+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19538,15 +19538,20 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-24T01:54:41.728618+00:00",
       "new_missions": 2
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-24T07:52:00.371931+00:00",
+      "new_missions": 0
     }
   ],
   "telegram": {
     "last_update_id": 644591856
   },
   "system": {
-    "status": "IDLE",
+    "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-24T01:54:41.728526+00:00",
+    "last_scan": "2026-11-24T07:52:00.371784+00:00",
     "total_found": 751,
     "total_completed": 0
   }
