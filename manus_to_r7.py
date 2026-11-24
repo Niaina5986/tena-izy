@@ -77,7 +77,9 @@ def get_manus_result(task_id):
     texts = []
     attachments = []
 
-    for message in data.get("messages", []):
+    messages = data.get("messages", [])
+
+    for message in messages:
 
         if message.get("type") == "status_update":
             status = message.get(
@@ -93,7 +95,11 @@ def get_manus_result(task_id):
             assistant.get("attachments") or []
         )
 
-    return status, "\n\n".join(reversed(texts)), attachments
+    return (
+        str(status).lower(),
+        "\n\n".join(reversed(texts)),
+        attachments
+    )
 
 
 def safe_job_id(value):
@@ -186,6 +192,9 @@ def collect_files(attachments, files_dir):
     for index, attachment in enumerate(attachments, 1):
 
         if not isinstance(attachment, dict):
+            logging.warning(
+                "Pièce jointe ignorée : format invalide"
+            )
             continue
 
         filename = safe_filename(
@@ -217,7 +226,11 @@ def collect_files(attachments, files_dir):
             "size": size
         })
 
-        logging.info("Fichier récupéré : %s", candidate)
+        logging.info(
+            "Fichier récupéré : %s (%d octets)",
+            candidate,
+            size
+        )
 
     if not downloaded:
         raise ValueError("Aucun fichier téléchargeable")
@@ -225,7 +238,7 @@ def collect_files(attachments, files_dir):
     return downloaded
 
 
-def is_ready(mission, manus_status, content):
+def check_readiness(mission, manus_status, content):
 
     combined = (
         str(content or "")
@@ -235,19 +248,32 @@ def is_ready(mission, manus_status, content):
         + str(mission.get("last_result") or "")
     ).upper()
 
+    mission_status = str(
+        mission.get("status", "")
+    ).upper()
+
     if "NEEDS_HUMAN" in combined:
-        return False
+        return False, "ACTION HUMAINE REQUISE (NEEDS_HUMAN)"
 
     if "BLOCKED" in combined:
-        return False
+        return False, "MISSION BLOQUÉE (BLOCKED)"
 
     if "READY_TO_DELIVER" not in combined:
-        return False
+        return False, (
+            "MARQUEUR READY_TO_DELIVER ABSENT "
+            "dans les messages et résultats Manus"
+        )
 
-    return (
-        manus_status == "stopped"
-        or mission.get("status") == "READY_TO_DELIVER"
-    )
+    if (
+        manus_status != "stopped"
+        and mission_status != "READY_TO_DELIVER"
+    ):
+        return False, (
+            f"MANUS ENCORE ACTIF "
+            f"(Manus={manus_status}, mission={mission_status})"
+        )
+
+    return True, "MISSION VALIDÉE POUR TRANSFERT"
 
 
 def process_mission(mission_id, mission):
@@ -256,41 +282,101 @@ def process_mission(mission_id, mission):
     job_dir = INBOX / job_id
 
     if (job_dir / "delivery.json").exists():
-        logging.info("Déjà transférée : %s", job_id)
+        logging.info(
+            "DÉJÀ TRANSFÉRÉE : %s",
+            mission_id
+        )
         return False
 
     task_id = mission.get("manus_task_id")
 
     if not task_id:
+        logging.warning(
+            "ID MANUS ABSENT : %s",
+            mission_id
+        )
         return False
 
+    logging.info(
+        "Diagnostic mission %s | Manus task %s",
+        mission_id,
+        task_id
+    )
+
     try:
-        manus_status, content, attachments = get_manus_result(task_id)
+
+        manus_status, content, attachments = get_manus_result(
+            task_id
+        )
+
+        logging.info(
+            "Statut Manus : %s",
+            manus_status
+        )
+
+        logging.info(
+            "Pièces jointes Manus : %d",
+            len(attachments)
+        )
 
     except Exception as error:
 
+        logging.error(
+            "ERREUR API MANUS pour %s : %s",
+            mission_id,
+            error
+        )
+
         if mission.get("status") != "READY_TO_DELIVER":
             logging.warning(
-                "Impossible de consulter Manus : %s",
-                error
+                "TRANSFERT REFUSÉ : impossible de vérifier Manus"
             )
             return False
 
         logging.warning(
-            "API Manus indisponible, utilisation de db.json"
+            "Utilisation des informations locales de db.json"
         )
 
-        manus_status = mission.get("manus_status", "")
+        manus_status = str(
+            mission.get("manus_status", "")
+        ).lower()
+
         content = mission.get("execution_summary", "")
+
         attachments = mission.get("deliverables") or []
 
-    if not is_ready(mission, manus_status, content):
+    ready, reason = check_readiness(
+        mission,
+        manus_status,
+        content
+    )
 
-        logging.info("Mission non prête : %s", mission_id)
+    if not ready:
+
+        logging.warning(
+            "TRANSFERT REFUSÉ | Mission %s | Raison : %s",
+            mission_id,
+            reason
+        )
+
         return False
 
     if not attachments:
         attachments = mission.get("deliverables") or []
+
+    if not attachments:
+
+        logging.warning(
+            "TRANSFERT REFUSÉ | Mission %s | Aucun livrable disponible",
+            mission_id
+        )
+
+        return False
+
+    logging.info(
+        "VALIDATION OK : %s",
+        mission_id
+    )
 
     job_dir.mkdir(parents=True, exist_ok=False)
 
@@ -301,14 +387,19 @@ def process_mission(mission_id, mission):
             job_dir / "files"
         )
 
-        title = mission.get("title", "Mission Manus")
+        title = mission.get(
+            "title",
+            "Mission Manus"
+        )
 
         description = (
             "Livraison préparée automatiquement par TENA IZY.\n\n"
             f"Mission ID : {mission_id}\n"
             f"Source : {mission.get('url', '')}\n\n"
             "Résumé Manus :\n"
-            + str(content or mission.get("execution_summary", ""))[-5000:]
+            + str(
+                content or mission.get("execution_summary", "")
+            )[-5000:]
         )
 
         manifest = {
@@ -334,13 +425,25 @@ def process_mission(mission_id, mission):
             encoding="utf-8"
         )
 
-        logging.info("TRANSFERT R7 RÉUSSI : %s", job_id)
+        logging.info(
+            "TRANSFERT R7 RÉUSSI : %s",
+            mission_id
+        )
+
+        logging.info(
+            "Nombre de fichiers transférés : %d",
+            len(files)
+        )
 
         return True
 
     except Exception:
 
-        shutil.rmtree(job_dir, ignore_errors=True)
+        shutil.rmtree(
+            job_dir,
+            ignore_errors=True
+        )
+
         raise
 
 
@@ -349,19 +452,33 @@ def main():
     if not MANUS_API_KEY:
         raise RuntimeError("MANUS_API_KEY absent")
 
-    INBOX.mkdir(parents=True, exist_ok=True)
+    INBOX.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     missions = load_missions()
 
     examined = 0
     transferred = 0
 
+    logging.info(
+        "DÉMARRAGE DIAGNOSTIC MANUS-R7"
+    )
+
+    logging.info(
+        "Missions enregistrées : %d",
+        len(missions)
+    )
+
     for mission_id, mission in missions.items():
 
         if not isinstance(mission, dict):
             continue
 
-        status = str(mission.get("status", "")).upper()
+        status = str(
+            mission.get("status", "")
+        ).upper()
 
         if status not in CANDIDATE_STATUSES:
             continue
@@ -373,20 +490,39 @@ def main():
 
         try:
 
-            if process_mission(mission_id, mission):
+            if process_mission(
+                mission_id,
+                mission
+            ):
                 transferred += 1
 
         except Exception:
 
             logging.exception(
-                "Erreur mission %s",
+                "ERREUR PENDANT LE TRANSFERT : %s",
                 mission_id
             )
 
     logging.info(
-        "FIN : %d missions examinées, %d transférées",
-        examined,
+        "======================================"
+    )
+
+    logging.info(
+        "DIAGNOSTIC TERMINÉ"
+    )
+
+    logging.info(
+        "Missions examinées : %d",
+        examined
+    )
+
+    logging.info(
+        "Missions transférées : %d",
         transferred
+    )
+
+    logging.info(
+        "======================================"
     )
 
 
