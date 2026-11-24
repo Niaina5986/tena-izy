@@ -14,6 +14,9 @@ DATABASE = ROOT / "livraison.json"
 TOKEN = os.getenv("GH_PAT")
 API = "https://api.github.com"
 
+CHECK_INTERVAL = 20
+MAX_WAIT_SECONDS = 12 * 60
+
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}",
     "Accept": "application/vnd.github+json",
@@ -29,17 +32,23 @@ def load_db():
         return {"version": 1, "deliveries": {}}
 
     try:
-        return json.loads(DATABASE.read_text(encoding="utf-8"))
+        return json.loads(
+            DATABASE.read_text(encoding="utf-8")
+        )
     except Exception:
-        raise RuntimeError("livraison.json illisible. Arrêt par sécurité.")
+        raise RuntimeError(
+            "livraison.json illisible. Arrêt par sécurité."
+        )
 
 
 def save_db(db):
     temp = DATABASE.with_suffix(".tmp")
+
     temp.write_text(
         json.dumps(db, indent=2, ensure_ascii=False),
         encoding="utf-8"
     )
+
     temp.replace(DATABASE)
 
 
@@ -54,10 +63,14 @@ def api(method, endpoint, **kwargs):
 
     if not response.ok:
         raise RuntimeError(
-            f"GitHub API {response.status_code}: {response.text[:1000]}"
+            f"GitHub API {response.status_code}: "
+            f"{response.text[:1000]}"
         )
 
     if response.status_code == 204:
+        return {}
+
+    if not response.content:
         return {}
 
     return response.json()
@@ -88,8 +101,9 @@ def get_files(job_dir, manifest):
     result = []
 
     for file in source.rglob("*"):
+
         if file.is_symlink():
-            raise ValueError("Les liens symboliques sont interdits.")
+            raise ValueError("Liens symboliques interdits.")
 
         if not file.is_file():
             continue
@@ -97,16 +111,20 @@ def get_files(job_dir, manifest):
         relative = file.relative_to(source).as_posix()
         relative = safe_path(relative)
 
-        if relative.lower() == "db.json":
-            raise ValueError("Modification de db.json interdite.")
-
-        if relative.lower() == "livraison.json":
-            raise ValueError("Modification de livraison.json interdite.")
+        if relative.lower() in (
+            "db.json",
+            "livraison.json"
+        ):
+            raise ValueError(
+                f"Modification interdite : {relative}"
+            )
 
         content = file.read_bytes()
 
         if len(content) > 10 * 1024 * 1024:
-            raise ValueError(f"Fichier trop volumineux : {relative}")
+            raise ValueError(
+                f"Fichier trop volumineux : {relative}"
+            )
 
         result.append({
             "path": relative,
@@ -123,18 +141,22 @@ def get_files(job_dir, manifest):
 
 
 def create_delivery(job_dir, manifest, db):
+
     job_id = manifest["job_id"]
 
     if job_id in db["deliveries"]:
-        print(f"Mission déjà enregistrée : {job_id}")
+        print("Mission déjà enregistrée :", job_id)
         return
 
     if manifest.get("ready") is not True:
-        raise ValueError("La mission n'est pas déclarée prête.")
+        raise ValueError("Mission non déclarée prête.")
 
     repo = manifest["repository"]
 
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+    if not re.fullmatch(
+        r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+",
+        repo
+    ):
         raise ValueError("Nom de dépôt invalide.")
 
     base = manifest.get("base_branch", "main")
@@ -142,7 +164,7 @@ def create_delivery(job_dir, manifest, db):
 
     files = get_files(job_dir, manifest)
 
-    repository = api("GET", f"/repos/{repo}")
+    api("GET", f"/repos/{repo}")
 
     base_ref = api(
         "GET",
@@ -159,7 +181,10 @@ def create_delivery(job_dir, manifest, db):
     blobs = []
 
     for file in files:
-        encoded = base64.b64encode(file["content"]).decode()
+
+        encoded = base64.b64encode(
+            file["content"]
+        ).decode()
 
         blob = api(
             "POST",
@@ -178,10 +203,16 @@ def create_delivery(job_dir, manifest, db):
         })
 
     for deleted in manifest.get("delete_paths", []):
+
         deleted = safe_path(deleted)
 
-        if deleted.lower() in ("db.json", "livraison.json"):
-            raise ValueError("Suppression d'un fichier protégé interdite.")
+        if deleted.lower() in (
+            "db.json",
+            "livraison.json"
+        ):
+            raise ValueError(
+                "Suppression d'un fichier protégé interdite."
+            )
 
         blobs.append({
             "path": deleted,
@@ -210,8 +241,12 @@ def create_delivery(job_dir, manifest, db):
     )
 
     branch = (
-        "delivery/" +
-        re.sub(r"[^a-zA-Z0-9-]", "-", job_id.lower())[:45]
+        "delivery/"
+        + re.sub(
+            r"[^a-zA-Z0-9-]",
+            "-",
+            job_id.lower()
+        )[:45]
     )
 
     api(
@@ -231,9 +266,13 @@ def create_delivery(job_dir, manifest, db):
             "head": branch,
             "base": base,
             "body": (
-                manifest.get("description", "Automated delivery by R7.")
+                manifest.get(
+                    "description",
+                    "Automated delivery by R7."
+                )
                 + "\n\n"
-                + f"Source agent: {manifest.get('source', 'Unknown')}"
+                + f"Source agent: "
+                + f"{manifest.get('source', 'Unknown')}"
                 + "\n"
                 + f"Delivery ID: {job_id}"
             )
@@ -257,62 +296,187 @@ def create_delivery(job_dir, manifest, db):
     print("LIVRAISON CRÉÉE :", pr["html_url"])
 
 
+def check_validation(repo, sha):
+
+    checks = api(
+        "GET",
+        f"/repos/{repo}/commits/{sha}/check-runs"
+    )
+
+    statuses = api(
+        "GET",
+        f"/repos/{repo}/commits/{sha}/status"
+    )
+
+    check_runs = checks.get("check_runs", [])
+    status_contexts = statuses.get("statuses", [])
+
+    if not check_runs and not status_contexts:
+        return "PENDING"
+
+    for check in check_runs:
+
+        if check.get("status") != "completed":
+            return "PENDING"
+
+        if check.get("conclusion") != "success":
+            return "FAILED"
+
+    for status in status_contexts:
+
+        if status.get("state") != "success":
+            return "FAILED"
+
+    return "SUCCESS"
+
+
+def merge_pull_request(repo, number, sha):
+
+    pr = api(
+        "GET",
+        f"/repos/{repo}/pulls/{number}"
+    )
+
+    if pr.get("state") != "open":
+        return False
+
+    if pr.get("draft"):
+        print("PR en brouillon : fusion interdite.")
+        return False
+
+    if pr.get("merged"):
+        return True
+
+    if pr.get("head", {}).get("sha") != sha:
+        print("Le code a changé : nouvelle vérification nécessaire.")
+        return False
+
+    if pr.get("mergeable") is False:
+        print("PR non fusionnable.")
+        return False
+
+    result = api(
+        "PUT",
+        f"/repos/{repo}/pulls/{number}/merge",
+        json={
+            "sha": sha,
+            "merge_method": "squash"
+        }
+    )
+
+    if result.get("merged") is True:
+        print("FUSION AUTOMATIQUE RÉUSSIE :", result.get("html_url"))
+        return True
+
+    return False
+
+
 def monitor_deliveries(db):
-    for job_id, item in db["deliveries"].items():
-        if item["status"] in ("MERGED", "CLOSED"):
-            continue
 
-        repo = item["repository"]
-        number = item["pr_number"]
+    deadline = time.time() + MAX_WAIT_SECONDS
 
-        try:
-            pr = api(
-                "GET",
-                f"/repos/{repo}/pulls/{number}"
-            )
+    active = {
+        job_id: item
+        for job_id, item in db["deliveries"].items()
+        if item.get("status") not in (
+            "MERGED",
+            "CLOSED",
+            "CHECKS_FAILED"
+        )
+    }
 
-            if pr["merged"]:
-                item["status"] = "MERGED"
-                print(job_id, "MERGED")
+    while active and time.time() < deadline:
 
-            elif pr["state"] == "closed":
-                item["status"] = "CLOSED"
-                print(job_id, "CLOSED")
+        for job_id, item in list(active.items()):
 
-            else:
-                checks = api(
+            repo = item["repository"]
+            number = item["pr_number"]
+            sha = item["commit"]
+
+            try:
+
+                pr = api(
                     "GET",
-                    f"/repos/{repo}/commits/{item['commit']}/check-runs"
+                    f"/repos/{repo}/pulls/{number}"
                 )
 
-                runs = checks.get("check_runs", [])
+                if pr.get("merged"):
+                    item["status"] = "MERGED"
+                    active.pop(job_id)
+                    continue
 
-                if runs and all(
-                    run["status"] == "completed"
-                    for run in runs
-                ):
-                    if all(
-                        run["conclusion"] == "success"
-                        for run in runs
-                    ):
-                        item["status"] = "CHECKS_PASSED"
+                if pr.get("state") == "closed":
+                    item["status"] = "CLOSED"
+                    active.pop(job_id)
+                    continue
+
+                validation = check_validation(repo, sha)
+
+                if validation == "PENDING":
+                    item["status"] = "WAITING_CHECKS"
+                    continue
+
+                if validation == "FAILED":
+                    item["status"] = "CHECKS_FAILED"
+                    active.pop(job_id)
+                    print("ÉCHEC DES CONTRÔLES :", job_id)
+                    continue
+
+                if validation == "SUCCESS":
+
+                    item["status"] = "CHECKS_PASSED"
+                    save_db(db)
+
+                    merged = merge_pull_request(
+                        repo,
+                        number,
+                        sha
+                    )
+
+                    if merged:
+                        item["status"] = "MERGED"
+                        active.pop(job_id)
                     else:
-                        item["status"] = "CHECKS_FAILED"
+                        item["status"] = "MERGE_BLOCKED"
+                        active.pop(job_id)
 
-                print(job_id, item["status"])
+            except Exception as error:
 
-        except Exception as error:
-            print("Erreur surveillance", job_id, error)
+                print(
+                    "Erreur surveillance",
+                    job_id,
+                    error
+                )
+
+                item["status"] = "MERGE_BLOCKED"
+                active.pop(job_id)
+
+            save_db(db)
+
+        if active:
+            time.sleep(CHECK_INTERVAL)
+
+    for job_id, item in active.items():
+
+        if item.get("status") == "WAITING_CHECKS":
+            item["status"] = "WAITING_CHECKS_TIMEOUT"
+
+            print(
+                "Temps d'attente dépassé :",
+                job_id
+            )
 
     save_db(db)
 
 
 def main():
+
     INBOX.mkdir(exist_ok=True)
 
     db = load_db()
 
     for job_dir in INBOX.iterdir():
+
         if not job_dir.is_dir():
             continue
 
@@ -322,14 +486,26 @@ def main():
             continue
 
         try:
+
             manifest = json.loads(
-                manifest_file.read_text(encoding="utf-8")
+                manifest_file.read_text(
+                    encoding="utf-8"
+                )
             )
 
-            create_delivery(job_dir, manifest, db)
+            create_delivery(
+                job_dir,
+                manifest,
+                db
+            )
 
         except Exception as error:
-            print("LIVRAISON EN ERREUR :", job_dir.name, error)
+
+            print(
+                "LIVRAISON EN ERREUR :",
+                job_dir.name,
+                error
+            )
 
     monitor_deliveries(db)
 
