@@ -1,0 +1,41 @@
+name: TENA IZY MANUS R7
+
+'on':
+workflow_dispatch:
+
+jobs:
+delivery:
+runs-on: ubuntu-latest
+timeout-minutes: 20
+
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+    with:
+      ref: backup-before-r7-automation
+      token: ${{ secrets.GH_PAT }}
+
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
+
+  - name: Install requests
+    run: pip install requests
+
+  - name: Check files
+    run: |
+      python -m py_compile manus_to_r7.py
+      python -m py_compile delivery_bot.py
+
+  - name: Transfer Manus to R7
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+      DELIVERY_REPOSITORY: Niaina5986/tena-izy
+      DELIVERY_BASE_BRANCH: main
+    run: python manus_to_r7.py
+
+  - name: Run R7
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+    run: python delivery_bot.py
