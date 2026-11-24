@@ -1,0 +1,62 @@
+name: TENA IZY - MANUS TO R7 AUTOMATIC DELIVERY
+
+on:
+workflow_dispatch:
+
+permissions:
+contents: write
+pull-requests: write
+checks: read
+
+concurrency:
+group: manus-r7-delivery
+cancel-in-progress: false
+
+jobs:
+automatic-delivery:
+runs-on: ubuntu-latest
+timeout-minutes: 20
+
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
+    with:
+      token: ${{ secrets.GH_PAT }}
+      persist-credentials: true
+
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.11"
+
+  - name: Install dependencies
+    run: |
+      python -m pip install --upgrade pip
+      pip install requests
+
+  - name: Transfer Manus results to R7
+    env:
+      MANUS_API_KEY: ${{ secrets.MANUS_API_KEY }}
+      DELIVERY_REPOSITORY: Niaina5986/tena-izy
+      DELIVERY_BASE_BRANCH: main
+    run: |
+      python manus_to_r7.py
+
+  - name: Execute R7 delivery bot
+    env:
+      GH_PAT: ${{ secrets.GH_PAT }}
+    run: |
+      python delivery_bot.py
+
+  - name: Save delivery history
+    run: |
+      git config user.name "TENA IZY R7"
+      git config user.email "r7-delivery-bot@users.noreply.github.com"
+
+      if git status --porcelain -- livraison.json | grep -q .; then
+        git add livraison.json
+        git commit -m "chore(r7): update delivery history"
+        git push origin HEAD:${{ github.ref_name }}
+      else
+        echo "No delivery history changes."
+      fi
