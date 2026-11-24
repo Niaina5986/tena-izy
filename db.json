@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-23T16:27:07.423097+00:00",
+  "updated_at": "2026-11-24T01:54:41.728621+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -348,7 +348,7 @@
       "updated_at": "2026-11-20T04:58:29Z",
       "labels": [],
       "source": "GitHub",
-      "status": "NEW",
+      "status": "EXECUTING",
       "created_in_system": "2026-11-20T06:34:25.762914+00:00",
       "analysis": {
         "id": "6505130872",
@@ -362,7 +362,10 @@
       },
       "score": 9,
       "analyzed_at": "2026-11-20T06:37:01.737168+00:00",
-      "analysis_model": "gemini-3.5-flash-lite"
+      "analysis_model": "gemini-3.5-flash-lite",
+      "manus_task_id": "bANmqxcXxwLKjwBY25Q6rX",
+      "manus_task_url": "https://manus.im/app/bANmqxcXxwLKjwBY25Q6rX",
+      "started_at": "2026-11-24T01:54:41.265561+00:00"
     },
     "6505109863": {
       "id": "6505109863",
@@ -19461,6 +19464,58 @@
       "score": 3,
       "analyzed_at": "2026-11-23T16:27:05.294278+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:8aea3cd727d5e328dc4d": {
+      "id": "rentahuman:8aea3cd727d5e328dc4d",
+      "title": "Buy a toy Tesla in Austin, stamp its passport, photo at Giga Texas",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/8aea3cd727d5e328dc4d",
+      "repository": "",
+      "created_at": "2026-11-24T01:54:40.285691+00:00",
+      "updated_at": "2026-11-24T01:54:40.285709+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-24T01:54:40.285712+00:00",
+      "analysis": {
+        "id": "rentahuman:8aea3cd727d5e328dc4d",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-24T01:54:40.288566+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:39923813ac39d3229312": {
+      "id": "rentahuman:39923813ac39d3229312",
+      "title": "T-Mobile Android Spam Test - about 5-10 min active work, $15",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/39923813ac39d3229312",
+      "repository": "",
+      "created_at": "2026-11-24T01:54:40.285765+00:00",
+      "updated_at": "2026-11-24T01:54:40.285766+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-24T01:54:40.285767+00:00",
+      "analysis": {
+        "id": "rentahuman:39923813ac39d3229312",
+        "score": 4,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 4,
+      "analyzed_at": "2026-11-24T01:54:40.288585+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19478,16 +19533,21 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-23T16:27:07.423091+00:00",
       "new_missions": 9
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-24T01:54:41.728618+00:00",
+      "new_missions": 2
     }
   ],
   "telegram": {
     "last_update_id": 644591856
   },
   "system": {
-    "status": "RUNNING",
-    "current_mission": "6505617306",
-    "last_scan": "2026-11-23T16:27:07.422979+00:00",
-    "total_found": 749,
+    "status": "IDLE",
+    "current_mission": "6505130872",
+    "last_scan": "2026-11-24T01:54:41.728526+00:00",
+    "total_found": 751,
     "total_completed": 0
   }
 }
