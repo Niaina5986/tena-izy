@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-24T07:52:00.371938+00:00",
+  "updated_at": "2026-11-24T12:39:08.808487+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19516,6 +19516,32 @@
       "score": 4,
       "analyzed_at": "2026-11-24T01:54:40.288585+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:f13ec540acf4635a626a": {
+      "id": "rentahuman:f13ec540acf4635a626a",
+      "title": "Data Entry, Typing & Document Analysis — Remote Gig (Up to 10 hrs/week)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/f13ec540acf4635a626a",
+      "repository": "",
+      "created_at": "2026-11-24T12:30:04.808370+00:00",
+      "updated_at": "2026-11-24T12:30:04.808393+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-24T12:30:04.808395+00:00",
+      "analysis": {
+        "id": "rentahuman:f13ec540acf4635a626a",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-24T12:30:04.811429+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19543,6 +19569,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-24T07:52:00.371931+00:00",
       "new_missions": 0
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-24T12:39:08.808479+00:00",
+      "new_missions": 1
     }
   ],
   "telegram": {
@@ -19551,8 +19582,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-24T07:52:00.371784+00:00",
-    "total_found": 751,
+    "last_scan": "2026-11-24T12:39:08.808349+00:00",
+    "total_found": 752,
     "total_completed": 0
   }
 }
