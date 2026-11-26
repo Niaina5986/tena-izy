@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-25T16:16:59.417101+00:00",
+  "updated_at": "2026-11-26T00:30:33.811358+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19568,6 +19568,136 @@
       "score": 4,
       "analyzed_at": "2026-11-24T22:47:17.377217+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:9ffa3018e92139b10000": {
+      "id": "rentahuman:9ffa3018e92139b10000",
+      "title": "Remote Research & Writing Assistant (Long-Term)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/9ffa3018e92139b10000",
+      "repository": "",
+      "created_at": "2026-11-26T00:21:28.537637+00:00",
+      "updated_at": "2026-11-26T00:21:28.537666+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T00:21:28.537670+00:00",
+      "analysis": {
+        "id": "rentahuman:9ffa3018e92139b10000",
+        "score": 4,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 4,
+      "analyzed_at": "2026-11-26T00:21:28.541582+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:f8323f48ebb34edf394d": {
+      "id": "rentahuman:f8323f48ebb34edf394d",
+      "title": "Decide whether two names in short made-up chats mean the same thing (27 pairs, 20 to 25 minutes, on a computer)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/f8323f48ebb34edf394d",
+      "repository": "",
+      "created_at": "2026-11-26T00:21:28.537677+00:00",
+      "updated_at": "2026-11-26T00:21:28.537679+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T00:21:28.537682+00:00",
+      "analysis": {
+        "id": "rentahuman:f8323f48ebb34edf394d",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-26T00:21:28.541598+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:f1ec5236ad60140145c3": {
+      "id": "rentahuman:f1ec5236ad60140145c3",
+      "title": "T-Mobile Android Spam Test - about 5-10 min active work, $15",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/f1ec5236ad60140145c3",
+      "repository": "",
+      "created_at": "2026-11-26T00:21:28.537700+00:00",
+      "updated_at": "2026-11-26T00:21:28.537702+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T00:21:28.537704+00:00",
+      "analysis": {
+        "id": "rentahuman:f1ec5236ad60140145c3",
+        "score": 4,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 4,
+      "analyzed_at": "2026-11-26T00:21:28.541609+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:d95be5d4ca3ad8e5f8e0": {
+      "id": "rentahuman:d95be5d4ca3ad8e5f8e0",
+      "title": "Comment on 10 UNIQUE Uber / DoorDash / gig driver YouTube LONGFORM videos (beginner guides and tips)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/d95be5d4ca3ad8e5f8e0",
+      "repository": "",
+      "created_at": "2026-11-26T00:21:28.537707+00:00",
+      "updated_at": "2026-11-26T00:21:28.537709+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T00:21:28.537711+00:00",
+      "analysis": {
+        "id": "rentahuman:d95be5d4ca3ad8e5f8e0",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-26T00:21:28.541633+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:a66e3b2f386882f1641c": {
+      "id": "rentahuman:a66e3b2f386882f1641c",
+      "title": "LlamaIndex Sign Holder – AWS re:Invent @ The Venetian (Nov 30–Dec 5)",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/a66e3b2f386882f1641c",
+      "repository": "",
+      "created_at": "2026-11-26T00:21:28.537714+00:00",
+      "updated_at": "2026-11-26T00:21:28.537716+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T00:21:28.537718+00:00",
+      "analysis": {
+        "id": "rentahuman:a66e3b2f386882f1641c",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-26T00:21:28.541648+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19615,6 +19745,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-25T16:16:59.417093+00:00",
       "new_missions": 0
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-26T00:30:33.811350+00:00",
+      "new_missions": 5
     }
   ],
   "telegram": {
@@ -19623,8 +19758,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-25T16:16:59.416948+00:00",
-    "total_found": 753,
+    "last_scan": "2026-11-26T00:30:33.811230+00:00",
+    "total_found": 758,
     "total_completed": 0
   }
 }
