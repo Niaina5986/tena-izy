@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-26T09:04:12.842393+00:00",
+  "updated_at": "2026-11-26T19:09:29.900631+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19724,6 +19724,58 @@
       "score": 3,
       "analyzed_at": "2026-11-26T08:55:07.150802+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:51HrlQKEgg0u33VBfRgF": {
+      "id": "rentahuman:51HrlQKEgg0u33VBfRgF",
+      "title": "Test bounty probe",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/51HrlQKEgg0u33VBfRgF",
+      "repository": "",
+      "created_at": "2026-11-26T19:00:26.944125+00:00",
+      "updated_at": "2026-11-26T19:00:26.944147+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T19:00:26.944150+00:00",
+      "analysis": {
+        "id": "rentahuman:51HrlQKEgg0u33VBfRgF",
+        "score": 5,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "HIGH",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 5,
+      "analyzed_at": "2026-11-26T19:00:26.948941+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:1ab2c8c70dcb207388c1": {
+      "id": "rentahuman:1ab2c8c70dcb207388c1",
+      "title": "Register on Taka App & Complete Face Verification",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/1ab2c8c70dcb207388c1",
+      "repository": "",
+      "created_at": "2026-11-26T19:00:26.944178+00:00",
+      "updated_at": "2026-11-26T19:00:26.944179+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T19:00:26.944181+00:00",
+      "analysis": {
+        "id": "rentahuman:1ab2c8c70dcb207388c1",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-26T19:00:26.948962+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19781,6 +19833,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-26T09:04:12.842386+00:00",
       "new_missions": 1
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-26T19:09:29.900621+00:00",
+      "new_missions": 2
     }
   ],
   "telegram": {
@@ -19789,8 +19846,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-26T09:04:12.842269+00:00",
-    "total_found": 759,
+    "last_scan": "2026-11-26T19:09:29.900458+00:00",
+    "total_found": 761,
     "total_completed": 0
   }
 }
