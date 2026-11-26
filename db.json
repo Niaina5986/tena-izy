@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-26T00:30:33.811358+00:00",
+  "updated_at": "2026-11-26T09:04:12.842393+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19698,6 +19698,32 @@
       "score": 3,
       "analyzed_at": "2026-11-26T00:21:28.541648+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:540ddd63e84caa7fce19": {
+      "id": "rentahuman:540ddd63e84caa7fce19",
+      "title": "Comment on 50 Gig Driver YouTube videos",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/540ddd63e84caa7fce19",
+      "repository": "",
+      "created_at": "2026-11-26T08:55:07.147235+00:00",
+      "updated_at": "2026-11-26T08:55:07.147236+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-26T08:55:07.147237+00:00",
+      "analysis": {
+        "id": "rentahuman:540ddd63e84caa7fce19",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-26T08:55:07.150802+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19750,6 +19776,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-26T00:30:33.811350+00:00",
       "new_missions": 5
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-26T09:04:12.842386+00:00",
+      "new_missions": 1
     }
   ],
   "telegram": {
@@ -19758,8 +19789,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-26T00:30:33.811230+00:00",
-    "total_found": 758,
+    "last_scan": "2026-11-26T09:04:12.842269+00:00",
+    "total_found": 759,
     "total_completed": 0
   }
 }
