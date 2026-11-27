@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-27T02:19:50.612962+00:00",
+  "updated_at": "2026-11-27T11:01:04.689695+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -19906,6 +19906,84 @@
       "score": 3,
       "analyzed_at": "2026-11-27T02:10:45.929991+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:c83427c15cba0feae9e2": {
+      "id": "rentahuman:c83427c15cba0feae9e2",
+      "title": "tiny cake, name on the box, candles lit, on camera",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/c83427c15cba0feae9e2",
+      "repository": "",
+      "created_at": "2026-11-27T10:51:59.552604+00:00",
+      "updated_at": "2026-11-27T10:51:59.552644+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-27T10:51:59.552647+00:00",
+      "analysis": {
+        "id": "rentahuman:c83427c15cba0feae9e2",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-27T10:51:59.557513+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:YEhtAmw1byNRXUM0oFiw": {
+      "id": "rentahuman:YEhtAmw1byNRXUM0oFiw",
+      "title": "DeedSpring: blackout poem from a found page — one seat",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/YEhtAmw1byNRXUM0oFiw",
+      "repository": "",
+      "created_at": "2026-11-27T10:51:59.552692+00:00",
+      "updated_at": "2026-11-27T10:51:59.552694+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-27T10:51:59.552695+00:00",
+      "analysis": {
+        "id": "rentahuman:YEhtAmw1byNRXUM0oFiw",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-27T10:51:59.557543+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:babb02cee69ef2e584f5": {
+      "id": "rentahuman:babb02cee69ef2e584f5",
+      "title": "Book handout crew (2 spots): AWS re:Invent, Las Vegas, Tue Dec 1 – Thu Dec 3, 2026",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/babb02cee69ef2e584f5",
+      "repository": "",
+      "created_at": "2026-11-27T10:51:59.552697+00:00",
+      "updated_at": "2026-11-27T10:51:59.552699+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-27T10:51:59.552701+00:00",
+      "analysis": {
+        "id": "rentahuman:babb02cee69ef2e584f5",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-27T10:51:59.557556+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -19973,6 +20051,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-27T02:19:50.612954+00:00",
       "new_missions": 5
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-27T11:01:04.689686+00:00",
+      "new_missions": 3
     }
   ],
   "telegram": {
@@ -19981,8 +20064,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-27T02:19:50.612826+00:00",
-    "total_found": 766,
+    "last_scan": "2026-11-27T11:01:04.689522+00:00",
+    "total_found": 769,
     "total_completed": 0
   }
 }
