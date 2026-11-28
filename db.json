@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-27T20:06:31.936075+00:00",
+  "updated_at": "2026-11-28T02:50:53.384222+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -20010,6 +20010,32 @@
       "score": 3,
       "analyzed_at": "2026-11-27T19:57:26.703676+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "frantic:146": {
+      "id": "frantic:146",
+      "title": "Make a v0 email template your own and send it through an MCP server",
+      "description": "",
+      "url": "https://gofrantic.com/bounties/146",
+      "repository": "",
+      "created_at": "2026-11-28T02:41:48.606787+00:00",
+      "updated_at": "2026-11-28T02:41:48.606789+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-28T02:41:48.606792+00:00",
+      "analysis": {
+        "id": "frantic:146",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-28T02:41:48.610934+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -20087,6 +20113,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-27T20:06:31.936067+00:00",
       "new_missions": 1
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-28T02:50:53.384214+00:00",
+      "new_missions": 1
     }
   ],
   "telegram": {
@@ -20095,8 +20126,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-27T20:06:31.935942+00:00",
-    "total_found": 770,
+    "last_scan": "2026-11-28T02:50:53.384058+00:00",
+    "total_found": 771,
     "total_completed": 0
   }
 }
