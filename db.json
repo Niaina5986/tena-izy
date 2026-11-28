@@ -1,6 +1,6 @@
 {
   "version": "2.1.0",
-  "updated_at": "2026-11-28T02:50:53.384222+00:00",
+  "updated_at": "2026-11-28T11:03:35.881582+00:00",
   "missions": {
     "6506009703": {
       "id": "6506009703",
@@ -20036,6 +20036,58 @@
       "score": 3,
       "analyzed_at": "2026-11-28T02:41:48.610934+00:00",
       "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:cca9b3ca5557170a14b1": {
+      "id": "rentahuman:cca9b3ca5557170a14b1",
+      "title": "PT - AI evaluation assistance",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/cca9b3ca5557170a14b1",
+      "repository": "",
+      "created_at": "2026-11-28T10:54:33.015124+00:00",
+      "updated_at": "2026-11-28T10:54:33.015125+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-28T10:54:33.015126+00:00",
+      "analysis": {
+        "id": "rentahuman:cca9b3ca5557170a14b1",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-28T10:54:33.018734+00:00",
+      "analysis_model": "TENA-IZY"
+    },
+    "rentahuman:f7da60209e8516f5877a": {
+      "id": "rentahuman:f7da60209e8516f5877a",
+      "title": "Try MinuteSay – Post 3 Times & Earn Credits",
+      "description": "",
+      "url": "https://rentahuman.ai/bounties/f7da60209e8516f5877a",
+      "repository": "",
+      "created_at": "2026-11-28T10:54:33.015133+00:00",
+      "updated_at": "2026-11-28T10:54:33.015134+00:00",
+      "labels": [],
+      "source": "Jobbi",
+      "status": "NEW",
+      "created_in_system": "2026-11-28T10:54:33.015135+00:00",
+      "analysis": {
+        "id": "rentahuman:f7da60209e8516f5877a",
+        "score": 3,
+        "reward_estimate": 0,
+        "difficulty": "UNKNOWN",
+        "automation": "MEDIUM",
+        "risk": "LOW",
+        "suitable": false,
+        "explanation": "Pré-analyse automatique. Récompense et conditions à confirmer."
+      },
+      "score": 3,
+      "analyzed_at": "2026-11-28T10:54:33.018756+00:00",
+      "analysis_model": "TENA-IZY"
     }
   },
   "history": [
@@ -20118,6 +20170,11 @@
       "action": "TENA_IZY_RUN",
       "timestamp": "2026-11-28T02:50:53.384214+00:00",
       "new_missions": 1
+    },
+    {
+      "action": "TENA_IZY_RUN",
+      "timestamp": "2026-11-28T11:03:35.881574+00:00",
+      "new_missions": 2
     }
   ],
   "telegram": {
@@ -20126,8 +20183,8 @@
   "system": {
     "status": "RUNNING",
     "current_mission": "6505130872",
-    "last_scan": "2026-11-28T02:50:53.384058+00:00",
-    "total_found": 771,
+    "last_scan": "2026-11-28T11:03:35.881431+00:00",
+    "total_found": 773,
     "total_completed": 0
   }
 }
